@@ -50,6 +50,33 @@ button { font: inherit; color: inherit; }
 }
 .skip:focus { top: 12px; }
 
+/* ---------- aurora: slow colour cycle behind everything ---------- */
+@property --gc1 { syntax: "<color>"; inherits: false; initial-value: #7c3aed; }
+@property --gc2 { syntax: "<color>"; inherits: false; initial-value: #22c55e; }
+@property --gc3 { syntax: "<color>"; inherits: false; initial-value: #e8a06a; }
+.aurora {
+  position: fixed; inset: -10%; z-index: -1; pointer-events: none;
+  opacity: 0.4;
+  background:
+    radial-gradient(55% 45% at 12% -5%, var(--gc1) 0%, transparent 62%),
+    radial-gradient(48% 40% at 88% 8%, var(--gc2) 0%, transparent 65%),
+    radial-gradient(65% 55% at 50% 108%, var(--gc3) 0%, transparent 70%);
+  animation: aurora-cycle 40s linear infinite;
+  transition: --gc1 1.2s ease, --gc2 1.2s ease, --gc3 1.2s ease;
+}
+/* Four harmonious schemes, ~10 s each: brand violet/green/clay, then
+   indigo/emerald, violet/teal and deep blue/lime rotations. */
+@keyframes aurora-cycle {
+  0%, 24.9%   { --gc1: #7c3aed; --gc2: #22c55e; --gc3: #e8a06a; }
+  25%, 49.9%  { --gc1: #6366f1; --gc2: #10b981; --gc3: #fb923c; }
+  50%, 74.9%  { --gc1: #8b5cf6; --gc2: #14b8a6; --gc3: #f97316; }
+  75%, 99.9%  { --gc1: #4f46e5; --gc2: #2dd4bf; --gc3: #fdba74; }
+  100%        { --gc1: #7c3aed; --gc2: #22c55e; --gc3: #e8a06a; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .aurora { animation: none; }
+}
+
 /* ---------- buttons ---------- */
 .btn {
   --h: 44px;
