@@ -1,4 +1,4 @@
-/* ytm-rs site. No framework, no build step. */
+/* RedSpotfy site. No framework, no build step. */
 (() => {
   "use strict";
 
@@ -108,18 +108,18 @@
   function heroArt() {
     const c = document.createElement("canvas"); c.width = c.height = 512;
     const g = c.getContext("2d");
-    g.fillStyle = "#2a0407"; g.fillRect(0, 0, 512, 512);
+    g.fillStyle = "#0d0618"; g.fillRect(0, 0, 512, 512);
     const blob = (x, y, r, col) => {
       const gr = g.createRadialGradient(x * 512, y * 512, 0, x * 512, y * 512, r * 512);
       gr.addColorStop(0, col); gr.addColorStop(1, "rgba(0,0,0,0)");
       g.fillStyle = gr; g.fillRect(0, 0, 512, 512);
     };
-    blob(0.28, 0.32, 0.5, "#ff1a2b");
-    blob(0.78, 0.26, 0.38, "#ff8a1f");
-    blob(0.62, 0.82, 0.42, "#ff3d7f");
-    blob(0.12, 0.86, 0.36, "#4a0c33");
-    blob(0.52, 0.5, 0.16, "#ffd2a6");
-    blob(0.9, 0.7, 0.3, "#b3122a");
+    blob(0.28, 0.32, 0.5, "#7c3aed");
+    blob(0.78, 0.26, 0.38, "#22c55e");
+    blob(0.62, 0.82, 0.42, "#e8a06a");
+    blob(0.12, 0.86, 0.36, "#4a1d96");
+    blob(0.52, 0.5, 0.16, "#c4b5fd");
+    blob(0.9, 0.7, 0.3, "#312e81");
     return c;
   }
 
@@ -196,7 +196,7 @@ void main(){
 
   function makeWarp(canvas, source, opts = {}) {
     const gl = canvas.getContext("webgl", { antialias: false, alpha: false, preserveDrawingBuffer: false, powerPreference: "low-power" });
-    if (!gl) { canvas.style.background = "radial-gradient(circle at 30% 30%, #ff2433, #3a0610 70%)"; canvas.classList.add("is-ready"); return null; }
+    if (!gl) { canvas.style.background = "radial-gradient(circle at 30% 30%, #7c3aed, #120a24 70%)"; canvas.classList.add("is-ready"); return null; }
     const sh = (type, src) => { const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s); return s; };
     const pr = gl.createProgram();
     gl.attachShader(pr, sh(gl.VERTEX_SHADER, VS)); gl.attachShader(pr, sh(gl.FRAGMENT_SHADER, FS)); gl.linkProgram(pr);
@@ -439,8 +439,8 @@ void main(){
         pu.style.setProperty("--pc", color); pu.style.setProperty("--delay", `${(i * 0.55).toFixed(2)}s`); pu.style.setProperty("--d", `${3.2 + (i % 3) * 0.5}s`);
         svg.appendChild(pu);
       };
-      $$('[data-node="in"]', beams).forEach((n, i) => add(curve(pt(n.getBoundingClientRect(), "r"), pt(hub, "l")), i, "#ffb347"));
-      $$('[data-node="out"]', beams).forEach((n, i) => add(curve(pt(hub, "r"), pt(n.getBoundingClientRect(), "l")), i + 3, "#ff3b3b"));
+      $$('[data-node="in"]', beams).forEach((n, i) => add(curve(pt(n.getBoundingClientRect(), "r"), pt(hub, "l")), i, "#e8a06a"));
+      $$('[data-node="out"]', beams).forEach((n, i) => add(curve(pt(hub, "r"), pt(n.getBoundingClientRect(), "l")), i + 3, "#7c3aed"));
     };
     new ResizeObserver(build).observe(beams);
   }
@@ -479,7 +479,7 @@ void main(){
   }));
 
   /* ---------------- live GitHub data ---------------- */
-  const REPO = "grapedjuice/ytm-rs";
+  const REPO = "danilobrayann/redspotfy";
   const cached = (key, url) => {
     try {
       const hit = JSON.parse(sessionStorage.getItem(key) || "null");
@@ -490,7 +490,7 @@ void main(){
       .then((data) => { try { sessionStorage.setItem(key, JSON.stringify({ at: Date.now(), data })); } catch {} return data; });
   };
   // stars are fetched fresh (GitHub caches 60 s) and again when you come back to the tab, e.g. after starring
-  try { sessionStorage.removeItem("ytmrs-repo"); } catch {} // stale count saved by an older version of this script
+  try { sessionStorage.removeItem("redspotfy-repo"); } catch {} // stale count saved by an older version of this script
   let starsAt = 0;
   const loadStars = () => {
     if (Date.now() - starsAt < 30000) return;
@@ -511,7 +511,7 @@ void main(){
     $$("[data-os-label]").forEach((el) => (el.textContent = `Download for ${name}`));
     $$(`[data-os="${os}"]`).forEach((el) => el.classList.add("is-yours"));
   }
-  cached("ytmrs-release", `https://api.github.com/repos/${REPO}/releases/latest`).then((rel) => {
+  cached("redspotfy-release", `https://api.github.com/repos/${REPO}/releases/latest`).then((rel) => {
     if (!rel || !rel.tag_name) return;
     $$("[data-version]").forEach((el) => (el.textContent = rel.tag_name));
     const assets = rel.assets || [];
