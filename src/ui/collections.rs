@@ -1,0 +1,332 @@
+//! Albums, playlists and Liked Music for the pages and playback: loading them
+//! (see `lists`), and what arrives.
+
+use std::collections::HashSet;
+
+use crate::backend::{Collection, Req};
+use crate::model::{Card, ShelfKind, Target, Track};
+
+use super::lists::{Arrival, Done, LIKED_MUSIC, Opened, Start};
+use super::pages::thousands;
+use super::queue::QueueFill;
+use super::App;
+
+impl App {
+    /// What the queue was started from, while the song playing is one of it: what kind
+    /// of thing it is ("playlist", "album", "artist"), its name, and where it opens.
+    pub(super) fn playing_from(&self) -> Option<(&'static str, String, Target)> {
+        let source = self.queue_source.as_ref().filter(|_| !self.queue.plays_elsewhere())?;
+        let current = self.current();
+        // Played straight from its card: the name came with its songs.
+        let played = || self.played_title.as_ref().filter(|(t, _)| t == source).map(|(_, n)| n.clone());
+        let (kind, name) = match source {
+            Target::Playlist(id) if id == LIKED_MUSIC => ("playlist", "Liked Music".to_owned()),
+            Target::Playlist(id) => {
+                // Kept while it plays; the sidebar's list has the name if it went anyway.
+                let sidebar = || {
+                    let list = self.library.as_ref().map(|l| l.playlists.as_slice()).or(self.sidebar_cache.as_deref()).unwrap_or_default();
+                    list.iter().find(|c| matches!(&c.target, Target::Playlist(p) if p == id)).map(|c| c.title.clone())
+                };
+                ("playlist", self.opened(id).map(|o| o.c.title.clone()).or_else(played).or_else(sidebar)?)
+            }
+            Target::Album(id) => {
+                let from_song = || current?.album.as_ref().filter(|a| a.id.as_deref() == Some(id.as_str())).map(|a| a.name.clone());
+                ("album", self.opened(id).map(|o| o.c.title.clone()).or_else(played).or_else(from_song)?)
+            }
+            Target::Artist(id) => {
+                let from_song = || current?.artists.iter().find(|a| a.id.as_deref() == Some(id.as_str())).map(|a| a.name.clone());
+                ("artist", self.artist.as_ref().filter(|a| &a.id == id).map(|a| a.name.clone()).or_else(played).or_else(from_song)?)
+            }
+            Target::Song(_) => return None,
+        };
+        (!name.trim().is_empty()).then(|| (kind, name, source.clone()))
+    }
+
+    /// Load an album or playlist, unless a load of it is under way. `changed`: if one is,
+    /// it's loaded once more afterwards.
+    pub(super) fn load_list(&mut self, id: &str, album: bool, changed: bool) {
+        if let Some(s) = self.lists.load(id, album, changed) {
+            self.start_load(s);
+        }
+    }
+
+    /// Opening an album or playlist page: loaded unless a copy from the last few minutes is kept.
+    pub(super) fn visit_list(&mut self, id: &str, album: bool) {
+        if let Some(s) = self.lists.visit(id, album, std::time::Instant::now()) {
+            self.start_load(s);
+        }
+    }
+
+    /// Add songs to one of the account's playlists. They show in it at once, even while
+    /// YouTube Music goes on listing it without them.
+    pub(super) fn add_to_playlist(&mut self, playlist_id: String, tracks: &[Track]) {
+        self.lists.added(&playlist_id, tracks);
+        self.sync_card_count(&playlist_id);
+        let video_ids = tracks.iter().map(|t| t.id.clone()).collect();
+        self.backend.request(Req::AddToPlaylist { playlist_id, video_ids });
+    }
+
+    /// The sidebar's and Library's playlist cards ("Suko • 4 tracks") count what YouTube
+    /// Music last listed, which lags behind edits. Once a playlist is in whole here, or
+    /// edited here, its cards count what it has, as its page does.
+    pub(super) fn sync_card_count(&mut self, id: &str) {
+        let Some(n) = self.lists.get(id).filter(|o| o.complete).and_then(|o| o.c.count) else { return };
+        let cards = self.library.as_mut().map(|l| &mut l.playlists).into_iter().chain(self.sidebar_cache.as_mut());
+        for c in cards.flatten().filter(|c| matches!(&c.target, Target::Playlist(p) if p == id)) {
+            if let Some(s) = with_count(&c.subtitle, n) {
+                c.subtitle = s;
+            }
+        }
+    }
+
+    pub(super) fn start_load(&self, s: Start) {
+        self.backend.request(match s.album {
+            true => Req::Album { id: s.id, load: s.load },
+            false => Req::Playlist { id: s.id, load: s.load, stream: s.stream },
+        });
+    }
+
+    pub(super) fn opened(&self, id: &str) -> Option<&Opened> {
+        self.lists.get(id)
+    }
+
+    /// More of the kept copy is still coming in, page by page.
+    pub(super) fn receiving(&self, id: &str) -> bool {
+        self.lists.receiving(id)
+    }
+
+    /// Liked Music: kept like any playlist, and also the Library's liked songs and the
+    /// hearts everywhere. `changed`: load it again even if a load is under way.
+    pub(super) fn request_liked(&mut self, changed: bool) {
+        if self.logged_in {
+            self.load_list(LIKED_MUSIC, false, changed);
+        }
+    }
+
+    /// Likes made here show at once, in the hearts and in Liked Music as kept. (A whole
+    /// reload asked for just before can still come back without them.)
+    pub(super) fn set_liked(&mut self, tracks: &[Track], like: bool) {
+        log::debug!("like={like}: {} songs, e.g. {:?}", tracks.len(), tracks.iter().take(3).map(|t| &t.id).collect::<Vec<_>>());
+        for t in tracks {
+            if like {
+                self.liked.insert(t.id.clone());
+            } else {
+                self.liked.remove(&t.id);
+            }
+        }
+        self.lists.set_liked(tracks, like);
+        // The rows moved: picks are by row number.
+        if self.page_list() == Some(LIKED_MUSIC) {
+            self.selection.clear();
+        }
+    }
+
+    /// Play a kept album or playlist from the start; one still coming in fills the queue
+    /// as the rest arrives.
+    pub(super) fn play_opened(&mut self, id: String, shuffled: bool) {
+        let Some(o) = self.opened(&id).filter(|o| !o.c.tracks.is_empty()) else { return };
+        let tracks = o.c.tracks.clone();
+        let fill = self.receiving(&id).then(|| QueueFill { id: id.clone(), load: o.load, ran_out: false });
+        self.queue_source = Some(if o.c.is_album { Target::Album(id) } else { Target::Playlist(id) });
+        if shuffled {
+            self.play_shuffled(tracks, fill);
+        } else {
+            self.play_list_filling(tracks, 0, fill);
+        }
+    }
+
+    /// The album or playlist on screen.
+    pub(super) fn current_collection(&mut self) -> Option<&mut Collection> {
+        let id = self.page_list()?.to_owned();
+        self.lists.collection_mut(&id)
+    }
+
+    /// An album or playlist (or a playlist's first page) came in. Only the load under way
+    /// counts: one from before a sign-in change or a deletion is dropped.
+    pub(super) fn collection_in(&mut self, load: u64, c: Collection, more: bool) {
+        let id = c.id.clone();
+        let keep = self.keep_lists();
+        let keep: Vec<&str> = keep.iter().map(String::as_str).collect();
+        let Some(arrival) = self.lists.arrived(load, c, more, &keep) else { return };
+        if self.page_list() == Some(id.as_str()) {
+            self.loading = false;
+        }
+        if id == LIKED_MUSIC
+            && let Some(o) = self.lists.get(LIKED_MUSIC)
+        {
+            self.liked = o.c.tracks.iter().map(|t| t.id.clone()).collect();
+            log::debug!("hearts: {} liked (from Liked Music's first page or whole copy)", self.liked.len());
+        }
+        if let Arrival::Done(done) = arrival {
+            self.load_done(&id, done);
+        }
+        self.sync_card_count(&id);
+        // Its card's play button was pressed before it was here (in someone else's jam the host plays).
+        if let Some((Target::Playlist(p), shuffled)) = &self.play_pending
+            && *p == id
+        {
+            let shuffled = *shuffled;
+            self.play_pending = None;
+            if !self.jam.guest() {
+                self.play_opened(id, shuffled);
+            }
+        }
+    }
+
+    /// A playlist's next page: onto the kept copy, and onto the queue when that was played
+    /// before all of it was in. An empty last one also ends a load that failed.
+    pub(super) fn collection_more(&mut self, id: String, load: u64, tracks: Vec<Track>, set_ids: Vec<Option<String>>, more: bool) {
+        let keep = self.keep_lists();
+        let keep: Vec<&str> = keep.iter().map(String::as_str).collect();
+        let Some(page) = self.lists.page(&id, load, tracks, set_ids, more, &keep) else { return };
+        if id == LIKED_MUSIC {
+            if page.kept {
+                self.liked.extend(page.tracks.iter().map(|t| t.id.clone()));
+            }
+            log::debug!("hearts: {} liked", self.liked.len());
+        }
+        self.fill_queue(&id, load, page.tracks, more);
+        if let Some(done) = page.done {
+            self.load_done(&id, done);
+        }
+        self.sync_card_count(&id);
+    }
+
+    /// An album or playlist load ended. One that changed meanwhile loads again; one that
+    /// failed before anything came leaves its page with the retry.
+    fn load_done(&mut self, id: &str, done: Done) {
+        match done {
+            Done::Kept => {}
+            Done::Reload(s) => self.start_load(s),
+            Done::NotKept => {
+                if matches!(&self.play_pending, Some((Target::Playlist(p), _)) if p == id) {
+                    self.play_pending = None;
+                }
+                if self.page_list() == Some(id) {
+                    self.loading = false;
+                    self.load_failed = true;
+                }
+            }
+        }
+    }
+
+    /// The kept albums and playlists not to drop for room: the page on screen and what's playing.
+    fn keep_lists(&self) -> Vec<String> {
+        let playing = match &self.queue_source {
+            Some(Target::Album(id) | Target::Playlist(id)) => Some(id.clone()),
+            _ => None,
+        };
+        self.page_list().map(str::to_owned).into_iter().chain(playing).collect()
+    }
+
+    /// The next songs of a playlist played before all of it was in join the queue.
+    fn fill_queue(&mut self, id: &str, load: u64, tracks: Vec<Track>, more: bool) {
+        let playing_it = self.queue_source == Some(Target::Playlist(id.to_owned()));
+        let saved = match &mut self.undo {
+            Some(super::undo::Undo::Queue(saved)) => Some(saved),
+            _ => None,
+        };
+        let Some(filled) = self.queue.fill_saved(saved, id, load, tracks, more, playing_it) else { return };
+        if filled.ran_out {
+            self.next();
+        } else if filled.was_at_end && !self.buffering {
+            self.prefetch_next();
+        }
+        self.top_up();
+    }
+
+    pub(super) fn request_library(&mut self) {
+        self.library_requested = std::time::Instant::now();
+        self.backend.request(Req::Library);
+    }
+
+    pub(super) fn preferred_artist_ids(&self) -> Vec<String> {
+        let mut ids = HashSet::new();
+        if let Some(home) = &self.home {
+            for shelf in &home.shelves {
+                if shelf.title != "Listen again" && shelf.title != "Quick picks" { continue; }
+                match &shelf.kind {
+                    ShelfKind::Cards(cards) => {
+                        for card in cards {
+                            ids.extend(card.links.iter().filter_map(|link| link.id.clone()));
+                            if let Target::Song(track) = &card.target {
+                                ids.extend(track.artists.iter().filter_map(|artist| artist.id.clone()));
+                            }
+                        }
+                    }
+                    ShelfKind::Songs { tracks, .. } => {
+                        for track in tracks {
+                            ids.extend(track.artists.iter().filter_map(|artist| artist.id.clone()));
+                        }
+                    }
+                }
+            }
+        }
+        ids.into_iter().collect()
+    }
+}
+
+/// A card's subtitle ("Suko • 4 tracks") counting `n` instead, when it has a count and
+/// that's another one.
+fn with_count(subtitle: &str, n: u64) -> Option<String> {
+    let mut parts: Vec<&str> = subtitle.split(" • ").collect();
+    // The last one: an owner could be called "2 songs".
+    let (i, (old, noun)) = parts.iter().enumerate().rev().find_map(|(i, p)| Some((i, count_of(p)?)))?;
+    if old == n {
+        return None;
+    }
+    let count = format!("{} {noun}{}", thousands(n), if n == 1 { "" } else { "s" });
+    parts[i] = &count;
+    Some(parts.join(" • "))
+}
+
+/// The playlist cards `order`ed (indices into `cards`), the `pinned` ones first in the
+/// order they're pinned in.
+pub(super) fn pinned_first(pinned: &[String], cards: &[Card], order: impl IntoIterator<Item = usize>) -> Vec<usize> {
+    let rank = |i: usize| match &cards[i].target {
+        Target::Playlist(id) => pinned.iter().position(|p| p == id),
+        _ => None,
+    };
+    let mut order: Vec<usize> = order.into_iter().collect();
+    // Stable: the rest keep their order.
+    order.sort_by_key(|&i| rank(i).unwrap_or(usize::MAX));
+    order
+}
+
+/// "1,234 tracks" -> (1234, "track").
+fn count_of(part: &str) -> Option<(u64, &str)> {
+    let (n, noun) = part.split_once(' ')?;
+    let noun = noun.strip_suffix('s').unwrap_or(noun);
+    matches!(noun, "track" | "song").then_some(())?;
+    Some((n.replace(',', "").parse().ok()?, noun))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{pinned_first, with_count};
+    use crate::model::{Card, Target};
+
+    #[test]
+    fn pinned_playlists_come_first() {
+        let card = |id: &str| Card { title: String::new(), subtitle: String::new(), thumbs: Vec::new(), target: Target::Playlist(id.into()), round: false, links: Vec::new() };
+        let cards = [card("a"), card("b"), card("c"), card("d")];
+        let pinned = ["d".to_owned(), "b".to_owned(), "gone".to_owned()];
+        assert_eq!(pinned_first(&pinned, &cards, 0..4), [3, 1, 0, 2]);
+        // Sorted some other way, the rest keep that order.
+        assert_eq!(pinned_first(&pinned, &cards, [2, 1, 0, 3]), [3, 1, 2, 0]);
+        assert_eq!(pinned_first(&[], &cards, 0..4), [0, 1, 2, 3]);
+    }
+
+    #[test]
+    fn a_card_counts_what_its_playlist_has() {
+        assert_eq!(with_count("Suko • 4 tracks", 5).as_deref(), Some("Suko • 5 tracks"));
+        assert_eq!(with_count("Playlist • Suko • 2 songs", 1).as_deref(), Some("Playlist • Suko • 1 song"));
+        assert_eq!(with_count("Suko • 1 track", 2).as_deref(), Some("Suko • 2 tracks"));
+        assert_eq!(with_count("Suko • 999 tracks", 1000).as_deref(), Some("Suko • 1,000 tracks"));
+        assert_eq!(with_count("2 songs • 4 tracks", 5).as_deref(), Some("2 songs • 5 tracks"));
+        // Already right, or nothing to count in it.
+        assert_eq!(with_count("Suko • 4 tracks", 4), None);
+        assert_eq!(with_count("Auto playlist", 4), None);
+        assert_eq!(with_count("Suko • 4 views", 5), None);
+    }
+}
