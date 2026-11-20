@@ -42,7 +42,7 @@ pub fn parse(arg: &str) -> Option<String> {
         let (path, query) = rest.split_once('?')?;
         let lower = path.to_ascii_lowercase();
         let path = lower.trim_end_matches('/').trim_end_matches("/index.html");
-        if path != "grapedjuice.github.io/ytm-rs/jam" {
+        if path != "grapedjuice.github.io/ytm-rs/jam" && path != "danilobrayann.github.io/redspotfy/jam" {
             return None;
         }
         return query_param(query, "c").and_then(normalize);

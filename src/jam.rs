@@ -31,7 +31,7 @@ pub const CODE_LEN: usize = 6;
 
 /// Link that opens the app (through the website) and joins the room.
 pub fn share_link(code: &str) -> String {
-    format!("https://grapedjuice.github.io/ytm-rs/jam/?c={code}")
+    format!("https://danilobrayann.github.io/redspotfy/jam/?c={code}")
 }
 
 /// A fresh random room code.

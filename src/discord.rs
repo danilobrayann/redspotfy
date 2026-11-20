@@ -21,7 +21,7 @@ const CLIENT_ID: &str = "1521756469433991299";
 pub const APP_NAME: &str = "Youtube Music";
 
 /// ytm-rs's icon, from its website: the example song's artwork in Settings' preview.
-pub const ICON: &str = "https://grapedjuice.github.io/ytm-rs/icon-192.png";
+pub const ICON: &str = "https://danilobrayann.github.io/redspotfy/icon-192.png";
 
 const RETRY: Duration = Duration::from_secs(15);
 
@@ -504,7 +504,7 @@ mod tests {
             album_id: None,
             art: Some("https://img/1".into()),
             artist_pic: Some(Badge { name: "Imagine Dragons".into(), url: "https://img/a".into() }),
-            app_icon: "vinyl",
+            app_icon: "redspotfy",
             start_ms: 1000,
             end_ms: Some(200_000),
             paused: false,
@@ -560,7 +560,7 @@ mod tests {
     fn badge_can_be_the_picked_app_icon() {
         let prefs = Prefs { badge: BadgeShows::AppIcon, ..Prefs::default() };
         let a = serde_json::to_value(activity(&Card::new(&song(), &prefs))).unwrap();
-        assert_eq!(a["assets"]["small_image"], "https://grapedjuice.github.io/ytm-rs/badge/vinyl.png");
+        assert_eq!(a["assets"]["small_image"], "https://danilobrayann.github.io/redspotfy/badge/redspotfy.png");
         assert_eq!(a["assets"]["small_text"], APP_NAME);
         // Renamed, it's named that way.
         let c = Card::new(&song(), &Prefs { app_name: "Tunes".into(), ..prefs });

@@ -38,7 +38,7 @@ pub static ALL: &[Variant] = &[
 ];
 
 /// Where the website serves the icons' badges (`site/badge`).
-const BADGE_BASE: &str = "https://grapedjuice.github.io/ytm-rs/badge/";
+const BADGE_BASE: &str = "https://danilobrayann.github.io/redspotfy/badge/";
 
 pub fn get(id: &str) -> &'static Variant {
     ALL.iter().find(|v| v.id == id).unwrap_or(&ALL[0])
