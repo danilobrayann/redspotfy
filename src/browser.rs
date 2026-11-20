@@ -6,8 +6,6 @@ use std::path::PathBuf;
 
 use tao::event::{Event, WindowEvent};
 use tao::event_loop::{ControlFlow, EventLoopBuilder};
-#[cfg(target_os = "linux")]
-use tao::platform::run_return::EventLoopExtRunReturn;
 use tao::window::WindowBuilder;
 use wry::{WebContext, WebViewBuilder};
 
@@ -50,17 +48,17 @@ pub fn child_main(url: &str, title: &str) {
     };
 
     let mut context = WebContext::new(Some(profile_dir));
-    let builder = WebViewBuilder::new_with_web_context(&mut context);
+    let builder = WebViewBuilder::new_with_web_context(&mut context).with_url(url);
 
     #[cfg(target_os = "linux")]
-    let builder = {
+    let webview = {
         use tao::platform::unix::WindowExtUnix;
         use wry::WebViewBuilderExtUnix;
         builder.build_gtk(window.default_vbox().expect("tao vbox"))
     };
 
     #[cfg(not(target_os = "linux"))]
-    let webview = builder.with_url(url).build(&window);
+    let webview = builder.build(&window);
 
     let _webview = match webview {
         Ok(v) => v,
