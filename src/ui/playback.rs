@@ -201,7 +201,7 @@ impl App {
         let refocused = focused && !std::mem::replace(&mut self.was_focused, focused);
         let idle = !self.playing() && !self.buffering && !self.jam.active() && self.smoke.is_none();
         let due = self.queue_checked.is_none_or(|t| refocused && now - t > 60.0);
-        if self.logged_in && idle && due && std::env::var_os("YTM_SMOKE").is_none() {
+        if self.logged_in && idle && due && std::env::var_os("REDSPOTFY_SMOKE").is_none() {
             self.queue_checked = Some(now);
             self.backend.request(Req::ServerQueue);
         }

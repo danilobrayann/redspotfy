@@ -170,9 +170,9 @@ pub(super) fn settings_section(app: &mut App, ui: &mut Ui) {
     pages::settings_section(ui, "System-wide shortcuts", None, Some("These work while another app is in front, or the window is minimized or in the tray."), |ui| {
         if app.hotkeys.wayland || app.hotkeys.active.is_none() {
             let why = if app.hotkeys.wayland {
-                "Wayland doesn't let apps watch for keys in the background. Add shortcuts in your desktop's settings instead: ytm-rs answers its media keys."
+                "Wayland doesn't let apps watch for keys in the background. Add shortcuts in your desktop's settings instead: redspotfy answers its media keys."
             } else {
-                "The system wouldn't let ytm-rs set up shortcuts."
+                "The system wouldn't let redspotfy set up shortcuts."
             };
             pages::setting_row(ui, "Not available here", Some(why), |_| {});
             return;

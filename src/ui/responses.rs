@@ -91,13 +91,13 @@ impl App {
             self.buffering = false;
             self.skip_streak = 0;
             self.prefetch_next();
-            // Dev hook: YTM_SEEK=<secs> jumps into the first track once it starts.
+            // Dev hook: REDSPOTFY_SEEK=<secs> jumps into the first track once it starts.
             if self.generation == 1 {
-                if let Some(s) = std::env::var("YTM_SEEK").ok().and_then(|v| v.parse::<f32>().ok()) {
+                if let Some(s) = std::env::var("REDSPOTFY_SEEK").ok().and_then(|v| v.parse::<f32>().ok()) {
                     self.audio.send(AudioCmd::Seek(Duration::from_secs_f32(s)));
                 }
-                // YTM_SEEK_LATER=<secs>@<delay> seeks again that many seconds later.
-                if let Some((s, d)) = dev_var("YTM_SEEK_LATER").and_then(|v| v.split_once('@')).and_then(|(s, d)| Some((s.parse::<f32>().ok()?, d.parse::<f32>().ok()?))) {
+                // REDSPOTFY_SEEK_LATER=<secs>@<delay> seeks again that many seconds later.
+                if let Some((s, d)) = dev_var("REDSPOTFY_SEEK_LATER").and_then(|v| v.split_once('@')).and_then(|(s, d)| Some((s.parse::<f32>().ok()?, d.parse::<f32>().ok()?))) {
                     let audio = self.audio.clone();
                     std::thread::spawn(move || {
                         std::thread::sleep(Duration::from_secs_f32(d));

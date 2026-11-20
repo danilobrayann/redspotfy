@@ -33,7 +33,7 @@ pub struct Setup {
     pick: Option<(usize, usize)>,
     /// Phase changes already announced (toast, library refresh).
     seen: Option<Phase>,
-    /// Dev hooks applied (YTM_TRANSFER_LINK / _START).
+    /// Dev hooks applied (REDSPOTFY_TRANSFER_LINK / _START).
     dev: bool,
     /// When the transfer finished (app time); the sidebar card leaves a few seconds later.
     done_at: Option<f64>,
@@ -228,7 +228,7 @@ fn setup(app: &mut App, ui: &mut Ui) {
                 }
             });
         });
-        if !app.xfer.dev && super::dev_var("YTM_TRANSFER_START") == Some("resume") {
+        if !app.xfer.dev && super::dev_var("REDSPOTFY_TRANSFER_START") == Some("resume") {
             app.xfer.dev = true;
             go = Some(true);
         }
@@ -384,9 +384,9 @@ fn setup(app: &mut App, ui: &mut Ui) {
         ui.add_space(gap);
         body(ui, 1);
     }
-    // Dev hook: YTM_TRANSFER_START=liked|playlist starts as soon as something is chosen.
+    // Dev hook: REDSPOTFY_TRANSFER_START=liked|playlist starts as soon as something is chosen.
     if !app.xfer.dev
-        && let Some(how) = super::dev_var("YTM_TRANSFER_START")
+        && let Some(how) = super::dev_var("REDSPOTFY_TRANSFER_START")
         && chosen.is_some()
     {
         app.xfer.dev = true;
@@ -394,8 +394,8 @@ fn setup(app: &mut App, ui: &mut Ui) {
         start = true;
     }
     if start && let Some(c) = chosen {
-        // (YTM_TRANSFER_START=liked tests Liked Music with any playlist.)
-        let liked = app.xfer.to_liked && (likes_like(&c) || super::dev_var("YTM_TRANSFER_START") == Some("liked"));
+        // (REDSPOTFY_TRANSFER_START=liked tests Liked Music with any playlist.)
+        let liked = app.xfer.to_liked && (likes_like(&c) || super::dev_var("REDSPOTFY_TRANSFER_START") == Some("liked"));
         let dest = if liked { Dest::Liked } else { Dest::Playlist(app.xfer.name.trim().to_owned()) };
         xfer.start(&app.backend, c.source.clone(), dest, false);
         app.xfer.tab = Tab::All;
@@ -1484,10 +1484,10 @@ pub fn sidebar_card(app: &mut App, ui: &mut Ui, collapsed: bool, fade: f32, icon
 
 /// Once a frame: tell the user when the transfer needs them or finished.
 pub fn poll(app: &mut App, ctx: &egui::Context, now: f64) {
-    // Dev hook: YTM_TRANSFER_LINK=<link> fills in the playlist link.
+    // Dev hook: REDSPOTFY_TRANSFER_LINK=<link> fills in the playlist link.
     if !app.xfer.dev
         && app.xfer.link.is_empty()
-        && let Some(l) = super::dev_var("YTM_TRANSFER_LINK")
+        && let Some(l) = super::dev_var("REDSPOTFY_TRANSFER_LINK")
     {
         app.xfer.link = l.to_owned();
     }

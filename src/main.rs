@@ -104,7 +104,7 @@ fn main() -> eframe::Result {
             return Ok(());
         }
     }
-    // A jam link (`ytm-rs://jam/CODE` or the https share link): hand it to the running
+    // A jam link (`redspotfy://jam/CODE` or the https share link): hand it to the running
     // instance if there is one, else join once this one is up. Before `init_logging`,
     // which would truncate the running instance's log file.
     if let Some(code) = deeplink::from_args() {
@@ -122,13 +122,13 @@ fn main() -> eframe::Result {
     stream::init_dev_hooks();
     proxy::init(&data_dir());
 
-    // Dev hook: YTM_BACKGROUND opens the window off-screen, unfocused and off the
+    // Dev hook: REDSPOTFY_BACKGROUND opens the window off-screen, unfocused and off the
     // taskbar, so automated test runs don't pop up over whatever the user is doing.
-    let background = std::env::var_os("YTM_BACKGROUND").is_some();
+    let background = std::env::var_os("REDSPOTFY_BACKGROUND").is_some();
     ui::init_titlebar(&data_dir());
     let mut viewport = egui::ViewportBuilder::default()
         .with_title("RedSpotfy")
-        .with_app_id("ytm-rs")
+        .with_app_id("redspotfy")
         .with_inner_size(DEFAULT_SIZE)
         .with_min_inner_size(MIN_SIZE)
         // Windows, and Linux where the desktop draws none: the app draws its own title
@@ -156,16 +156,16 @@ fn main() -> eframe::Result {
         },
         persist_window: !background,
         // Settings live with the rest of the data: beside the portable exe, or a
-        // YTM_DATA_DIR profile (e.g. a clean signed-out one for screenshots).
+        // REDSPOTFY_DATA_DIR profile (e.g. a clean signed-out one for screenshots).
         persistence_path: Some(data_dir().join("app.ron")),
         // No MSAA/depth/stencil: egui doesn't need them and they cost VRAM.
         multisampling: 0,
         depth_buffer: 0,
         stencil_buffer: 0,
-        // Dev hooks: YTM_FPS paces frames itself (see `ui::pace`), so vsync is off;
-        // YTM_NO_VSYNC turns it off as a driver forcing it off would.
+        // Dev hooks: REDSPOTFY_FPS paces frames itself (see `ui::pace`), so vsync is off;
+        // REDSPOTFY_NO_VSYNC turns it off as a driver forcing it off would.
         glow_options: eframe::egui_glow::GlowConfiguration {
-            vsync: std::env::var_os("YTM_FPS").is_none() && std::env::var_os("YTM_NO_VSYNC").is_none(),
+            vsync: std::env::var_os("REDSPOTFY_FPS").is_none() && std::env::var_os("REDSPOTFY_NO_VSYNC").is_none(),
             ..Default::default()
         },
         wgpu_options: renderer::wgpu_options(),
@@ -173,7 +173,7 @@ fn main() -> eframe::Result {
     };
 
     let run = eframe::run_native(
-        "ytm-rs",
+        "redspotfy",
         options,
         Box::new(|cc| {
             let ctx = cc.egui_ctx.clone();
@@ -197,8 +197,8 @@ fn main() -> eframe::Result {
             theme::follow_system_scheme(wake);
             // Whether song notifications can show here (Windows: a Start menu entry).
             notify::look_up();
-            // Keep `ytm-rs:` links pointing at this copy; dev builds leave it alone
-            // (even with YTM_UPDATE_FORCE).
+            // Keep `redspotfy:` links pointing at this copy; dev builds leave it alone
+            // (even with REDSPOTFY_UPDATE_FORCE).
             if update::installed() && !cfg!(debug_assertions) {
                 deeplink::register_protocol();
             }
@@ -213,8 +213,8 @@ fn main() -> eframe::Result {
             let log_setting = cc.storage.and_then(|s| s.get_string("log_volume"));
             let log_volume = log_setting.as_deref().is_none_or(|v| v == "1");
             let volume = if log_setting.is_none() { volume.cbrt() } else { volume };
-            // Dev hook: YTM_MUTE starts silent and never persists the volume.
-            let volume = if std::env::var_os("YTM_MUTE").is_some() { 0.0 } else { volume };
+            // Dev hook: REDSPOTFY_MUTE starts silent and never persists the volume.
+            let volume = if std::env::var_os("REDSPOTFY_MUTE").is_some() { 0.0 } else { volume };
 
             let device = cc.storage.and_then(|s| s.get_string("output_device")).filter(|d| !d.is_empty());
 
@@ -268,7 +268,7 @@ fn main() -> eframe::Result {
             }
             // The animated background needs the GPU context; without it the UI falls back
             // to a flat gradient.
-            let shader = std::env::var_os("YTM_NO_SHADER").is_none();
+            let shader = std::env::var_os("REDSPOTFY_NO_SHADER").is_none();
             if let Some(gl) = &cc.gl {
                 shader::install_glass(gl);
             }
@@ -315,11 +315,11 @@ fn hwnd(_: &eframe::CreationContext) -> Option<*mut std::ffi::c_void> {
 /// next to the settings (overwritten each launch).
 fn init_logging() {
     let mut builder = env_logger::Builder::from_env(
-        // A test build can be made more talkative: YTM_DEFAULT_LOG=warn,ytm_rs=debug cargo build.
-        env_logger::Env::default().default_filter_or(option_env!("YTM_DEFAULT_LOG").unwrap_or("warn,ytm_rs=info")),
+        // A test build can be made more talkative: REDSPOTFY_DEFAULT_LOG=warn,redspotfy=debug cargo build.
+        env_logger::Env::default().default_filter_or(option_env!("REDSPOTFY_DEFAULT_LOG").unwrap_or("warn,redspotfy=info")),
     );
-    // Dev hook: YTM_LOG=<path> logs there (test runs beside a running copy).
-    if let Some(path) = std::env::var_os("YTM_LOG") {
+    // Dev hook: REDSPOTFY_LOG=<path> logs there (test runs beside a running copy).
+    if let Some(path) = std::env::var_os("REDSPOTFY_LOG") {
         if let Ok(file) = std::fs::File::create(path) {
             builder.target(env_logger::Target::Pipe(Box::new(file)));
         }
@@ -327,8 +327,8 @@ fn init_logging() {
         let dir = data_dir();
         let _ = std::fs::create_dir_all(&dir);
         // The last run's log too: reopening the app after a problem would otherwise wipe it.
-        let _ = std::fs::rename(dir.join("ytm-rs.log"), dir.join("ytm-rs.prev.log"));
-        if let Ok(file) = std::fs::File::create(dir.join("ytm-rs.log")) {
+        let _ = std::fs::rename(dir.join("redspotfy.log"), dir.join("redspotfy.prev.log"));
+        if let Ok(file) = std::fs::File::create(dir.join("redspotfy.log")) {
             builder.target(env_logger::Target::Pipe(Box::new(file)));
         }
     }
@@ -343,7 +343,7 @@ fn init_logging() {
 }
 
 /// Settings, caches and the sign-in: `data` beside the portable build's exe, else the
-/// user's app data. Dev hook: YTM_DATA_DIR runs on a separate profile.
+/// user's app data. Dev hook: REDSPOTFY_DATA_DIR runs on a separate profile.
 /// Whether the desktop session is Wayland, and whether this run's window is a Wayland
 /// one. Not the same thing: with Close to tray on, the window is an X11 one there.
 static WAYLAND: OnceLock<(bool, bool)> = OnceLock::new();
@@ -389,7 +389,7 @@ fn trim_heap_periodically() {
 }
 
 /// Linux: note what the session is, and pick the window system for this run. Called
-/// first thing, before any thread starts. Dev hook: `YTM_WAYLAND` keeps the Wayland window.
+/// first thing, before any thread starts. Dev hook: `REDSPOTFY_WAYLAND` keeps the Wayland window.
 fn settle_window_system() {
     if !cfg!(target_os = "linux") {
         return;
@@ -397,7 +397,7 @@ fn settle_window_system() {
     let set = |k: &str| std::env::var_os(k).is_some_and(|v| !v.is_empty());
     let wayland = set("WAYLAND_DISPLAY") || std::env::var("XDG_SESSION_TYPE").is_ok_and(|v| v == "wayland");
     let tray = close_to_tray_saved(&std::fs::read_to_string(data_dir().join("app.ron")).unwrap_or_default());
-    let x11 = x11_for_tray(wayland, set("DISPLAY"), tray, set("YTM_WAYLAND"));
+    let x11 = x11_for_tray(wayland, set("DISPLAY"), tray, set("REDSPOTFY_WAYLAND"));
     if x11 {
         log::info!("window: X11 (XWayland), so Close to tray can hide the window and bring it back");
         // SAFETY: nothing else is running yet (no thread has been started), so nothing
@@ -414,13 +414,13 @@ fn settle_window_system() {
 }
 
 fn data_dir() -> std::path::PathBuf {
-    if let Some(d) = std::env::var_os("YTM_DATA_DIR") {
+    if let Some(d) = std::env::var_os("REDSPOTFY_DATA_DIR") {
         return d.into();
     }
     if let Some(dir) = update::portable_dir() {
         return dir.join("data");
     }
-    directories::ProjectDirs::from("", "", "ytm-rs").expect("no home directory").data_dir().to_path_buf()
+    directories::ProjectDirs::from("", "", "redspotfy").expect("no home directory").data_dir().to_path_buf()
 }
 
 #[cfg(test)]

@@ -335,9 +335,9 @@ mod shortcuts {
             dirs.push((pinned.join("TaskBar"), 1));
             dirs.push((pinned.join("StartMenu"), 1));
         }
-        // Dev hook: YTM_SHORTCUT_DIR also looks for shortcuts in that folder, so tests
+        // Dev hook: REDSPOTFY_SHORTCUT_DIR also looks for shortcuts in that folder, so tests
         // can check this without touching real shortcuts.
-        if let Some(d) = std::env::var_os("YTM_SHORTCUT_DIR") {
+        if let Some(d) = std::env::var_os("REDSPOTFY_SHORTCUT_DIR") {
             dirs.push((PathBuf::from(d), 1));
         }
         let mut out = Vec::new();
@@ -399,7 +399,7 @@ mod shortcuts {
         }
 
         fn scratch(name: &str) -> PathBuf {
-            let dir = std::env::temp_dir().join(format!("ytm-appicon-{name}-{}", std::process::id()));
+            let dir = std::env::temp_dir().join(format!("redspotfy-appicon-{name}-{}", std::process::id()));
             let _ = std::fs::remove_dir_all(&dir);
             std::fs::create_dir_all(&dir).unwrap();
             dir
@@ -411,8 +411,8 @@ mod shortcuts {
             let (user, common) = (dir.join("user"), dir.join("common"));
             let (exe, icon) = (std::env::current_exe().unwrap(), dir.join("wave.ico"));
             std::fs::write(&icon, b"icon").unwrap();
-            let shared = common.join("ytm-rs").join("ytm-rs.lnk");
-            let own = user.join("ytm-rs").join("ytm-rs.lnk");
+            let shared = common.join("redspotfy").join("redspotfy.lnk");
+            let own = user.join("redspotfy").join("redspotfy.lnk");
             make_link(&shared, &exe);
 
             let mut changed = Vec::new();
@@ -441,8 +441,8 @@ mod shortcuts {
             let other = dir.join("other.ico");
             std::fs::write(&icon, b"icon").unwrap();
             std::fs::write(&other, b"not this exe").unwrap();
-            let own = user.join("ytm-rs").join("ytm-rs.lnk");
-            make_link(&common.join("ytm-rs").join("ytm-rs.lnk"), &exe);
+            let own = user.join("redspotfy").join("redspotfy.lnk");
+            make_link(&common.join("redspotfy").join("redspotfy.lnk"), &exe);
             make_link(&own, &other);
 
             let mut changed = Vec::new();
@@ -469,7 +469,7 @@ mod shortcuts {
 
 /// Linux: GNOME and KDE show the icon of the app's .desktop file, not the window's
 /// (a Wayland window has none), so the chosen icon goes there (#146): into the user's
-/// own ytm-rs.desktop, install.sh's, or else a copy of the system's (the .deb's, the
+/// own redspotfy.desktop, install.sh's, or else a copy of the system's (the .deb's, the
 /// Arch package's) that goes again for Classic. Only an entry that launches this exe.
 #[cfg_attr(not(target_os = "linux"), allow(dead_code))]
 mod desktop {
@@ -477,11 +477,11 @@ mod desktop {
 
     use super::Variant;
 
-    const FILE: &str = "ytm-rs.desktop";
-    /// The icon the entry comes with: the theme's ytm-rs, the classic one.
-    const CLASSIC_ICON: &str = "ytm-rs";
+    const FILE: &str = "redspotfy.desktop";
+    /// The icon the entry comes with: the theme's redspotfy, the classic one.
+    const CLASSIC_ICON: &str = "redspotfy";
     /// Marks a copy of the system's entry as ours, so Classic removes it again.
-    const COPY: &str = "X-ytm-rs-Icon-Copy=true";
+    const COPY: &str = "X-redspotfy-Icon-Copy=true";
 
     /// How many entries were changed (0 or 1).
     pub fn sync(v: &Variant, data_dir: &Path) -> anyhow::Result<usize> {
@@ -496,7 +496,7 @@ mod desktop {
         let apps = data_home.join("applications");
         let changed = sync_at(icon.as_deref(), &apps, &system, &std::env::current_exe()?)?;
         if changed {
-            // GLib finds the `ytm-rs://` handler in the MIME cache of the entry's own
+            // GLib finds the `redspotfy://` handler in the MIME cache of the entry's own
             // folder, and a copy here hides the system's entry along with its cache line.
             let _ = std::process::Command::new("update-desktop-database").arg("-q").arg(&apps).status();
         }
@@ -617,10 +617,10 @@ mod desktop {
     mod tests {
         use super::*;
 
-        const ENTRY: &str = "[Desktop Entry]\nType=Application\nName=RedSpotfy\nExec=EXE\nIcon=ytm-rs\nStartupWMClass=ytm-rs\nMimeType=x-scheme-handler/ytm-rs;\n\n[Desktop Action x]\nIcon=other\n";
+        const ENTRY: &str = "[Desktop Entry]\nType=Application\nName=RedSpotfy\nExec=EXE\nIcon=redspotfy\nStartupWMClass=redspotfy\nMimeType=x-scheme-handler/redspotfy;\n\n[Desktop Action x]\nIcon=other\n";
 
         fn scratch(name: &str) -> PathBuf {
-            let dir = std::env::temp_dir().join(format!("ytm-desktop-{name}-{}", std::process::id()));
+            let dir = std::env::temp_dir().join(format!("redspotfy-desktop-{name}-{}", std::process::id()));
             let _ = std::fs::remove_dir_all(&dir);
             std::fs::create_dir_all(&dir).unwrap();
             dir
@@ -640,7 +640,7 @@ mod desktop {
             assert_eq!(icon_line(&f), "Icon=/d/icons/wave.png");
             assert!(is_copy(&f) && f.ends_with("[Desktop Action x]\nIcon=other\n"));
             // Back again: as it was.
-            assert_eq!(with_icon(&f, "ytm-rs", false), ENTRY);
+            assert_eq!(with_icon(&f, "redspotfy", false), ENTRY);
             assert_eq!(icon_line(&with_icon("[Desktop Entry]\nName=x\n", "a.png", false)), "Icon=a.png");
         }
 
@@ -684,7 +684,7 @@ mod desktop {
         fn another_copy_of_the_apps_entry_is_left_alone() {
             let dir = scratch("other");
             let (user, system, exe) = (dir.join("user"), dir.join("system"), std::env::current_exe().unwrap());
-            let other = dir.join("ytm-rs");
+            let other = dir.join("redspotfy");
             std::fs::write(&other, b"not this exe").unwrap();
             for d in [&user, &system] {
                 std::fs::create_dir_all(d).unwrap();

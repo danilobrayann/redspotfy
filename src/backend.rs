@@ -1567,8 +1567,8 @@ impl Backend {
             log::warn!("lyrics failed: {e:#}");
             LyricsSet::default()
         });
-        // Dev hook: YTM_LYRICS_FAIL=<source key>[,<key>…] makes those sources come back empty.
-        if let Ok(fail) = std::env::var("YTM_LYRICS_FAIL") {
+        // Dev hook: REDSPOTFY_LYRICS_FAIL=<source key>[,<key>…] makes those sources come back empty.
+        if let Ok(fail) = std::env::var("REDSPOTFY_LYRICS_FAIL") {
             set.sources.retain(|l| !fail.split(',').any(|k| k.trim() == l.provider.key()));
         }
         set
@@ -2421,10 +2421,10 @@ impl Backend {
     }
 }
 
-/// Test instances (`YTM_BACKGROUND`) keep plays out of the account's history unless
-/// `YTM_REPORT_PLAYS` is set.
+/// Test instances (`REDSPOTFY_BACKGROUND`) keep plays out of the account's history unless
+/// `REDSPOTFY_REPORT_PLAYS` is set.
 fn reports_plays() -> bool {
-    std::env::var_os("YTM_BACKGROUND").is_none() || std::env::var_os("YTM_REPORT_PLAYS").is_some()
+    std::env::var_os("REDSPOTFY_BACKGROUND").is_none() || std::env::var_os("REDSPOTFY_REPORT_PLAYS").is_some()
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -2720,15 +2720,15 @@ mod resolve_tests {
     /// Read-only, signed in to an account with a podcast added by RSS (NPR's Planet
     /// Money): visionOS says the episode isn't available, and the web player gives its
     /// feed's file, which is reachable.
-    /// `YTM_DATA_DIR=<profile> cargo test --release -- --ignored rss_episode_live --nocapture`
+    /// `REDSPOTFY_DATA_DIR=<profile> cargo test --release -- --ignored rss_episode_live --nocapture`
     #[tokio::test]
     #[ignore]
     async fn rss_episode_live() {
-        let dir = PathBuf::from(std::env::var("YTM_DATA_DIR").unwrap());
+        let dir = PathBuf::from(std::env::var("REDSPOTFY_DATA_DIR").unwrap());
         let api = ytmapi::Api::new(&dir);
         let session = api.account().expect("no session in the vault");
         let (http, solver) = (reqwest::Client::new(), jsc::Solver::new(&dir));
-        let id = std::env::var("YTM_RSS_EPISODE").unwrap_or_else(|_| "M77cW_SUPm4".into());
+        let id = std::env::var("REDSPOTFY_RSS_EPISODE").unwrap_or_else(|_| "M77cW_SUPm4".into());
         let vd = api.visitor_data(false).await.unwrap();
         let Err(e) = innertube::audio_stream(&http, &id, &vd, false).await else { panic!("visionOS played {id}") };
         println!("visionOS: {e:#}");

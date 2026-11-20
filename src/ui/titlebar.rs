@@ -38,7 +38,7 @@ impl Choice {
     pub fn label(self) -> &'static str {
         match self {
             Self::Auto => "Automatic",
-            Self::Own => "ytm-rs's",
+            Self::Own => "redspotfy's",
             Self::System => "System's",
         }
     }
@@ -92,9 +92,9 @@ const LIGHTS_X: f32 = 20.0;
 const LIGHTS_W: f32 = 84.0;
 
 /// macOS: the system's window buttons over the app's top row, the system's title strip
-/// gone. `YTM_NATIVE_TITLEBAR` keeps the strip.
+/// gone. `REDSPOTFY_NATIVE_TITLEBAR` keeps the strip.
 pub fn inset() -> bool {
-    cfg!(target_os = "macos") && std::env::var_os("YTM_NATIVE_TITLEBAR").is_none()
+    cfg!(target_os = "macos") && std::env::var_os("REDSPOTFY_NATIVE_TITLEBAR").is_none()
 }
 
 /// Whether the window's top is the app's 56-point row, the window buttons on its line:
@@ -104,7 +104,7 @@ pub fn own_row() -> bool {
 }
 
 fn decide(data_dir: &std::path::Path) -> bool {
-    if std::env::var_os("YTM_NATIVE_TITLEBAR").is_some() {
+    if std::env::var_os("REDSPOTFY_NATIVE_TITLEBAR").is_some() {
         return false;
     }
     if cfg!(target_os = "linux") {
@@ -114,9 +114,9 @@ fn decide(data_dir: &std::path::Path) -> bool {
 }
 
 /// Whether the app draws the title bar itself: on Windows, and on Linux as [`init`]
-/// settled it, unless `YTM_NATIVE_TITLEBAR` asks for the system's.
+/// settled it, unless `REDSPOTFY_NATIVE_TITLEBAR` asks for the system's.
 pub fn custom() -> bool {
-    *CUSTOM.get_or_init(|| cfg!(windows) && std::env::var_os("YTM_NATIVE_TITLEBAR").is_none())
+    *CUSTOM.get_or_init(|| cfg!(windows) && std::env::var_os("REDSPOTFY_NATIVE_TITLEBAR").is_none())
 }
 
 /// Full screen has no title bar. The app's own full screen (`crate::fullscreen`) goes
@@ -402,7 +402,7 @@ fn edges(ctx: &egui::Context, sides_only: bool) {
 pub fn set_hwnd(hwnd: *mut std::ffi::c_void, gl_vendor: Option<&str>) {
     #[cfg(windows)]
     if custom() {
-        frame::init(hwnd, drop_caption(gl_vendor, std::env::var("YTM_DROP_CAPTION").ok().as_deref()));
+        frame::init(hwnd, drop_caption(gl_vendor, std::env::var("REDSPOTFY_DROP_CAPTION").ok().as_deref()));
     }
 }
 
@@ -413,7 +413,7 @@ pub fn set_hwnd(hwnd: *mut std::ffi::c_void, gl_vendor: Option<&str>) {
 /// the window's, while the pointer lands where it should. Full screen, which drops the
 /// style, and the system title bar, whose drawable area does start below a caption,
 /// show it in place. Dropping the style costs only those animations, so it's for
-/// Intel's OpenGL alone. `YTM_DROP_CAPTION=1` drops it anywhere, `=0` keeps it.
+/// Intel's OpenGL alone. `REDSPOTFY_DROP_CAPTION=1` drops it anywhere, `=0` keeps it.
 #[cfg_attr(not(windows), allow(dead_code))]
 fn drop_caption(gl_vendor: Option<&str>, forced: Option<&str>) -> bool {
     match forced {

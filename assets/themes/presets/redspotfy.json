@@ -1,9 +1,9 @@
 {
-  "id": "ytm-rs",
-  "name": "ytm-rs",
-  "creators": ["ytm-rs"],
+  "id": "redspotfy",
+  "name": "redspotfy",
+  "creators": ["redspotfy"],
   "blurb": "The app's own look: animated album-art background, left-aligned karaoke lyrics.",
-  "source": "ytm-rs",
+  "source": "redspotfy",
   "accent": "cover",
   "background": { "mode": "kawarp", "solid": "#0c0a0e", "np_dim": 0.85, "scrim": 0.3 },
   "lyrics": {

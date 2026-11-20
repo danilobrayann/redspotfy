@@ -66,7 +66,7 @@ pub struct Session {
     load_started: Option<Instant>,
     /// How long songs take to start here, so they're opened that far ahead.
     load_ms: u64,
-    /// Steps of the YTM_JAM_SCRIPT dev hook already run.
+    /// Steps of the REDSPOTFY_JAM_SCRIPT dev hook already run.
     script_done: usize,
 }
 
@@ -150,22 +150,22 @@ pub fn leave(app: &mut App) {
     app.queue.drop_explicit();
 }
 
-/// Dev hooks: YTM_JAM_HOST=<code> starts a room with that code, YTM_JAM_JOIN=<code> joins one.
+/// Dev hooks: REDSPOTFY_JAM_HOST=<code> starts a room with that code, REDSPOTFY_JAM_JOIN=<code> joins one.
 pub fn dev_hooks(app: &mut App) {
-    if let Some(code) = super::dev_var("YTM_JAM_HOST").and_then(crate::jam::normalize_code) {
+    if let Some(code) = super::dev_var("REDSPOTFY_JAM_HOST").and_then(crate::jam::normalize_code) {
         app.go(Page::Jam);
         start_with(app, code);
-    } else if let Some(code) = super::dev_var("YTM_JAM_JOIN") {
+    } else if let Some(code) = super::dev_var("REDSPOTFY_JAM_JOIN") {
         app.go(Page::Jam);
         join(app, code);
     }
 }
 
-/// Dev hook: YTM_JAM_SCRIPT="<secs>:<action>,…" presses buttons at those app times, as
+/// Dev hook: REDSPOTFY_JAM_SCRIPT="<secs>:<action>,…" presses buttons at those app times, as
 /// whoever this instance is (a guest's go to the host as requests). Actions: skip, prev,
 /// toggle, seek=<secs>, add=<videoId>, control=on|off.
 pub fn dev_script(app: &mut App, ctx: &egui::Context, now: f64) {
-    let Some(script) = super::dev_var("YTM_JAM_SCRIPT") else { return };
+    let Some(script) = super::dev_var("REDSPOTFY_JAM_SCRIPT") else { return };
     for (i, step) in script.split(',').enumerate() {
         let Some((t, act)) = step.split_once(':') else { continue };
         let Ok(t) = t.parse::<f64>() else { continue };
@@ -626,7 +626,7 @@ fn dim(ui: &mut Ui, text: &str) {
 }
 
 fn lobby(app: &mut App, ui: &mut Ui) {
-    dim(ui, "Start a jam and friends hear what you play, at the same moment. Everyone listens on their own ytm-rs, and anyone can add songs.");
+    dim(ui, "Start a jam and friends hear what you play, at the same moment. Everyone listens on their own redspotfy, and anyone can add songs.");
     section_label(ui, "Start a jam", None);
     settings_card(ui, |ui| {
         let hint = app.account_name.clone().unwrap_or_else(|| "Guest".to_owned());

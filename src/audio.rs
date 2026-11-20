@@ -827,9 +827,9 @@ fn run(
     let mut seek_seq: u64 = 0;
     let seek_job: Arc<std::sync::Mutex<Option<SeekJob>>> = Default::default();
     let seek_busy = Arc::new(std::sync::atomic::AtomicBool::new(false));
-    // Dev hook: YTM_DEVICE_LOST=<secs> acts as if the output device disconnected that
+    // Dev hook: REDSPOTFY_DEVICE_LOST=<secs> acts as if the output device disconnected that
     // long into the first song (the error callback firing for a device that's gone).
-    let mut dev_lost = std::env::var("YTM_DEVICE_LOST").ok().and_then(|v| v.parse::<f32>().ok()).map(Duration::from_secs_f32);
+    let mut dev_lost = std::env::var("REDSPOTFY_DEVICE_LOST").ok().and_then(|v| v.parse::<f32>().ok()).map(Duration::from_secs_f32);
     // Since when nothing has played, to let go of the device after `IDLE_CLOSE`.
     let mut idle_since: Option<Instant> = Some(Instant::now());
     // When a pause fading out really pauses the players.

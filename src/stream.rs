@@ -110,7 +110,7 @@ enum Claim {
     Done,
 }
 
-/// Stream buffers alive, for the `YTM_MEM` dev log.
+/// Stream buffers alive, for the `REDSPOTFY_MEM` dev log.
 pub static LIVE: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
 
 impl Drop for Shared {
@@ -447,7 +447,7 @@ fn is_forbidden(e: &anyhow::Error) -> bool {
             .is_some_and(|s| s == reqwest::StatusCode::FORBIDDEN)
 }
 
-/// `YTM_STREAM_REFUSE`'s answer: what googlevideo says to a range it won't serve.
+/// `REDSPOTFY_STREAM_REFUSE`'s answer: what googlevideo says to a range it won't serve.
 #[derive(Debug)]
 struct SimulatedRefusal;
 
@@ -459,20 +459,20 @@ impl std::fmt::Display for SimulatedRefusal {
 
 impl std::error::Error for SimulatedRefusal {}
 
-/// Dev hook: YTM_STREAM_FAIL=<block> makes the first download fail from that block on,
+/// Dev hook: REDSPOTFY_STREAM_FAIL=<block> makes the first download fail from that block on,
 /// as if the connection died mid-song; later downloads work.
 static FAIL_FROM: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(usize::MAX);
 
-/// Dev hook: YTM_STREAM_REFUSE=<block> answers every file stream's ranges from that
+/// Dev hook: REDSPOTFY_STREAM_REFUSE=<block> answers every file stream's ranges from that
 /// block on with HTTP 403, fresh URLs too, as YouTube does past 1 MiB (in block 4) where
 /// it wants a PO token for the visionOS player's URLs. HLS segments get through.
 static REFUSE_FROM: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(usize::MAX);
 
 pub fn init_dev_hooks() {
-    if let Some(b) = std::env::var("YTM_STREAM_FAIL").ok().and_then(|v| v.parse().ok()) {
+    if let Some(b) = std::env::var("REDSPOTFY_STREAM_FAIL").ok().and_then(|v| v.parse().ok()) {
         FAIL_FROM.store(b, std::sync::atomic::Ordering::Relaxed);
     }
-    if let Some(b) = std::env::var("YTM_STREAM_REFUSE").ok().and_then(|v| v.parse().ok()) {
+    if let Some(b) = std::env::var("REDSPOTFY_STREAM_REFUSE").ok().and_then(|v| v.parse().ok()) {
         REFUSE_FROM.store(b, std::sync::atomic::Ordering::Relaxed);
     }
 }

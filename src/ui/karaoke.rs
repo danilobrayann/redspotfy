@@ -3446,10 +3446,10 @@ impl Glow {
     }
 }
 
-/// Dev hook: YTM_LYR_OFF=glow,blur,view leaves those parts out (memory breakdowns).
+/// Dev hook: REDSPOTFY_LYR_OFF=glow,blur,view leaves those parts out (memory breakdowns).
 pub fn dev_off(what: &str) -> bool {
     static OFF: std::sync::OnceLock<String> = std::sync::OnceLock::new();
-    OFF.get_or_init(|| std::env::var("YTM_LYR_OFF").unwrap_or_default()).split(',').any(|x| x == what)
+    OFF.get_or_init(|| std::env::var("REDSPOTFY_LYR_OFF").unwrap_or_default()).split(',').any(|x| x == what)
 }
 
 #[cfg(test)]
@@ -3641,7 +3641,7 @@ mod tests {
     }
 
     /// A Devanagari lyric in each bundled lyric font and weight, as the lines are laid out.
-    /// `YTM_SHOT=<file.png> cargo test --release -- --ignored devanagari_png --nocapture`
+    /// `REDSPOTFY_SHOT=<file.png> cargo test --release -- --ignored devanagari_png --nocapture`
     #[test]
     #[ignore]
     fn devanagari_png() {
@@ -3665,13 +3665,13 @@ mod tests {
         for (i, g) in rows.iter().enumerate() {
             blit(&mut img, &atlas, pos2(20.0, 10.0 + 50.0 * i as f32), g, [242, 240, 245], (0.0, h));
         }
-        img.save(std::env::var("YTM_SHOT").unwrap_or_else(|_| "devanagari.png".into())).unwrap();
+        img.save(std::env::var("REDSPOTFY_SHOT").unwrap_or_else(|_| "devanagari.png".into())).unwrap();
     }
 
     /// Before/after picture of a lyric line taller than the view, while its 6th row is
     /// sung: the old view stayed at the line's top; the new one pages down with it. The
     /// view positions are the scroll code's (the line's top, then the paging rule).
-    /// `YTM_SHOT=<file.png> cargo test --release -- --ignored paging_before_after_png`
+    /// `REDSPOTFY_SHOT=<file.png> cargo test --release -- --ignored paging_before_after_png`
     #[test]
     #[ignore]
     fn paging_before_after_png() {
@@ -3713,13 +3713,13 @@ mod tests {
                 blit(&mut img, &atlas, pos2(x0 + w.pos.x, v0 + w.pos.y - top), g, rgb, (v0, v1));
             }
         }
-        let out = std::env::var("YTM_SHOT").unwrap_or_else(|_| "paging-before-after.png".into());
+        let out = std::env::var("REDSPOTFY_SHOT").unwrap_or_else(|_| "paging-before-after.png".into());
         img.save(&out).unwrap();
         println!("wrote {out}");
     }
 
     /// Before/after picture of right-to-left text with the app's fonts (#29), to a PNG.
-    /// `YTM_SHOT=<file.png> cargo test --release -- --ignored rtl_before_after_png`
+    /// `REDSPOTFY_SHOT=<file.png> cargo test --release -- --ignored rtl_before_after_png`
     #[test]
     #[ignore]
     fn rtl_before_after_png() {
@@ -3774,7 +3774,7 @@ mod tests {
         for (at, g) in &draw {
             blit(&mut img, &atlas, *at, g, [242, 240, 245], (0.0, h as f32));
         }
-        let out = std::env::var("YTM_SHOT").unwrap_or_else(|_| "rtl-before-after.png".into());
+        let out = std::env::var("REDSPOTFY_SHOT").unwrap_or_else(|_| "rtl-before-after.png".into());
         img.save(&out).unwrap();
         println!("wrote {out}");
     }

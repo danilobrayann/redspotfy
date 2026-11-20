@@ -20,7 +20,7 @@ const CLIENT_ID: &str = "1521756469433991299";
 /// That application's name, unless the listener gives another.
 pub const APP_NAME: &str = "Youtube Music";
 
-/// ytm-rs's icon, from its website: the example song's artwork in Settings' preview.
+/// redspotfy's icon, from its website: the example song's artwork in Settings' preview.
 pub const ICON: &str = "https://danilobrayann.github.io/redspotfy/icon-192.png";
 
 const RETRY: Duration = Duration::from_secs(15);
@@ -360,7 +360,7 @@ pub struct Discord {
 
 impl Discord {
     pub fn spawn() -> Option<Self> {
-        let id = std::env::var("YTM_DISCORD_ID").ok().filter(|s| !s.is_empty()).unwrap_or_else(|| CLIENT_ID.to_owned());
+        let id = std::env::var("REDSPOTFY_DISCORD_ID").ok().filter(|s| !s.is_empty()).unwrap_or_else(|| CLIENT_ID.to_owned());
         let (tx, rx) = crossbeam_channel::unbounded();
         std::thread::Builder::new().name("discord".into()).spawn(move || run(&id, rx)).ok()?;
         Some(Self { tx })
@@ -625,7 +625,7 @@ mod tests {
     fn jam_button_only_in_a_room() {
         let prefs = Prefs { buttons: [Page::Jam, Page::None], ..Prefs::default() };
         assert!(Card::new(&song(), &prefs).buttons.is_empty());
-        let link = "https://grapedjuice.github.io/ytm-rs/jam/?c=ABC234";
+        let link = "https://danilobrayann.github.io/redspotfy/jam/?c=ABC234";
         let c = Card::new(&Presence { jam: Some(link.into()), ..song() }, &prefs);
         assert_eq!(c.buttons, vec![("Listen together", link.to_owned())]);
     }

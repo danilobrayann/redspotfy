@@ -696,7 +696,7 @@ pub fn glass_ready() -> bool {
 
 /// Make the programs. Failing only leaves panels with their plain tint.
 pub fn install_glass(gl: &glow::Context) {
-    if std::env::var_os("YTM_NO_GLASS").is_some() {
+    if std::env::var_os("REDSPOTFY_NO_GLASS").is_some() {
         return;
     }
     match make_glass(gl) {

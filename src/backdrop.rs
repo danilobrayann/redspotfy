@@ -180,7 +180,7 @@ mod tests {
 
     #[test]
     fn a_saved_material_comes_back_and_nonsense_means_none() {
-        let dir = std::env::temp_dir().join(format!("ytm-backdrop-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("redspotfy-backdrop-{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
         for b in Backdrop::ALL {
             super::save(&dir, b).unwrap();

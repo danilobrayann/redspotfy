@@ -61,14 +61,14 @@ Baixe o instalador na página de [releases](https://github.com/danilobrayann/red
 
 | Plataforma | Arquivo | Link |
 | --- | --- | --- |
-| Windows (Intel/AMD) | `ytm-rs-setup-<versão>.exe` | [Baixar](https://github.com/danilobrayann/redspotfy/releases/latest/download/ytm-rs-setup.exe) |
-| Windows (ARM) | `ytm-rs-setup-<versão>-arm64.exe` | [Baixar](https://github.com/danilobrayann/redspotfy/releases/latest/download/ytm-rs-setup-arm64.exe) |
-| macOS (Apple Silicon) | `ytm-rs-setup-<versão>-macos-aarch64.dmg` | [Baixar](https://github.com/danilobrayann/redspotfy/releases/latest/download/ytm-rs-setup-macos-aarch64.dmg) |
-| macOS (Intel) | `ytm-rs-setup-<versão>-macos-x86_64.dmg` | [Baixar](https://github.com/danilobrayann/redspotfy/releases/latest/download/ytm-rs-setup-macos-x86_64.dmg) |
-| Linux (.deb) | `ytm-rs_<versão>_amd64.deb` | [Baixar](https://github.com/danilobrayann/redspotfy/releases/latest/download/ytm-rs_amd64.deb) |
-| Linux (.tar.gz) | `ytm-rs-<versão>-linux-x86_64.tar.gz` | [Baixar](https://github.com/danilobrayann/redspotfy/releases/latest/download/ytm-rs-linux-x86_64.tar.gz) |
+| Windows (Intel/AMD) | `redspotfy-setup-<versão>.exe` | [Baixar](https://github.com/danilobrayann/redspotfy/releases/latest/download/redspotfy-setup.exe) |
+| Windows (ARM) | `redspotfy-setup-<versão>-arm64.exe` | [Baixar](https://github.com/danilobrayann/redspotfy/releases/latest/download/redspotfy-setup-arm64.exe) |
+| macOS (Apple Silicon) | `redspotfy-setup-<versão>-macos-aarch64.dmg` | [Baixar](https://github.com/danilobrayann/redspotfy/releases/latest/download/redspotfy-setup-macos-aarch64.dmg) |
+| macOS (Intel) | `redspotfy-setup-<versão>-macos-x86_64.dmg` | [Baixar](https://github.com/danilobrayann/redspotfy/releases/latest/download/redspotfy-setup-macos-x86_64.dmg) |
+| Linux (.deb) | `redspotfy_<versão>_amd64.deb` | [Baixar](https://github.com/danilobrayann/redspotfy/releases/latest/download/redspotfy_amd64.deb) |
+| Linux (.tar.gz) | `redspotfy-<versão>-linux-x86_64.tar.gz` | [Baixar](https://github.com/danilobrayann/redspotfy/releases/latest/download/redspotfy-linux-x86_64.tar.gz) |
 
-> O executável ainda se chama `ytm-rs` por enquanto — é o nome interno do
+> O executável ainda se chama `redspotfy` por enquanto — é o nome interno do
 > projeto herdado do fork original.
 
 **Linux (script):**
@@ -114,7 +114,7 @@ Interface com [egui](https://github.com/emilk/egui) · áudio com
 [Better Lyrics](https://github.com/better-lyrics) · temas da comunidade
 Better Lyrics · relay com [workers-rs](https://github.com/cloudflare/workers-rs).
 
-Fork de [ytm-rs](https://github.com/grapedjuice/ytm-rs).
+Fork de [redspotfy](https://github.com/danilobrayann/redspotfy).
 
 ## Licença
 

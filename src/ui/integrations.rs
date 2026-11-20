@@ -97,7 +97,7 @@ impl App {
     /// The window's title, which the taskbar and Alt+Tab show: the current song, or the
     /// app's name with none. Named like a browser's picture in picture while the mini
     /// player is the video: Wayland lets no app put itself above others, but a KDE window
-    /// rule for that title (and the app, ytm-rs) can.
+    /// rule for that title (and the app, redspotfy) can.
     pub(super) fn sync_title(&mut self, ctx: &egui::Context) {
         let want = if self.mini.active() && super::mini::video_active() {
             "Picture in picture".to_owned()
@@ -357,7 +357,7 @@ impl App {
             None => now > 8.0,
             Some(t) => now - t > 6.0 * 3600.0 && !matches!(u.state(), State::Ready { .. }),
         };
-        let enabled = self.auto_update && updatable() && dev_var("YTM_BACKGROUND").is_none_or(|_| dev_var("YTM_UPDATE_FORCE").is_some() || dev_var("YTM_UPDATE_FEED").is_some());
+        let enabled = self.auto_update && updatable() && dev_var("REDSPOTFY_BACKGROUND").is_none_or(|_| dev_var("REDSPOTFY_UPDATE_FORCE").is_some() || dev_var("REDSPOTFY_UPDATE_FEED").is_some());
         if enabled && due {
             self.update_checked = Some(now);
             u.check();

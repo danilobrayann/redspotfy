@@ -1,4 +1,4 @@
-//! Jam deep links: `ytm-rs://jam/CODE` and `https://grapedjuice.github.io/ytm-rs/jam/?c=CODE`.
+//! Jam deep links: `redspotfy://jam/CODE` and `https://danilobrayann.github.io/redspotfy/jam/?c=CODE`.
 //!
 //! Clicking a link launches a new process with the URL as its argument. If another
 //! instance is already running, the new one hands the code over a named pipe (a Unix
@@ -20,12 +20,12 @@ const SHOW_MSG: &str = "show";
 const RELAUNCH_FLAG: &str = "--relaunch";
 
 /// The room code in a launch argument, if it is a jam link:
-/// `ytm-rs://jam/CODE[/]` (any case) or the https share link with `?c=CODE`.
+/// `redspotfy://jam/CODE[/]` (any case) or the https share link with `?c=CODE`.
 pub fn parse(arg: &str) -> Option<String> {
     let arg = arg.trim().trim_matches('"');
     let (scheme, rest) = arg.split_once("://")?;
     let rest = rest.split('#').next().unwrap_or("");
-    if scheme.eq_ignore_ascii_case("ytm-rs") {
+    if scheme.eq_ignore_ascii_case("redspotfy") || scheme.eq_ignore_ascii_case("ytm-rs") {
         // `jam/CODE`, `jam/CODE/`, or `jam/?c=CODE`.
         let (path, query) = rest.split_once('?').unwrap_or((rest, ""));
         let path = path.trim_end_matches('/');
@@ -42,7 +42,8 @@ pub fn parse(arg: &str) -> Option<String> {
         let (path, query) = rest.split_once('?')?;
         let lower = path.to_ascii_lowercase();
         let path = lower.trim_end_matches('/').trim_end_matches("/index.html");
-        if path != "grapedjuice.github.io/ytm-rs/jam" && path != "danilobrayann.github.io/redspotfy/jam" {
+        let jam = ["danilobrayann.github.io/redspotfy/jam", "grapedjuice.github.io/ytm-rs/jam"];
+        if !jam.iter().any(|p| path == *p) {
             return None;
         }
         return query_param(query, "c").and_then(normalize);
@@ -95,7 +96,7 @@ pub fn forward_show() -> bool {
     forward_to_running(SHOW_MSG)
 }
 
-/// Per-user pipe name. A dev profile (`YTM_DATA_DIR`) gets its own, so test runs
+/// Per-user pipe name. A dev profile (`REDSPOTFY_DATA_DIR`) gets its own, so test runs
 /// never talk to the installed copy.
 #[cfg_attr(not(windows), allow(dead_code))]
 fn pipe_name() -> String {
@@ -104,13 +105,13 @@ fn pipe_name() -> String {
         .chars()
         .map(|c| if c.is_ascii_alphanumeric() || c == '-' || c == '_' { c } else { '_' })
         .collect();
-    format!(r"\\.\pipe\ytm-rs-jam-{user}{}", profile_suffix())
+    format!(r"\\.\pipe\redspotfy-jam-{user}{}", profile_suffix())
 }
 
-/// Empty, or `-HASH` of a dev profile's `YTM_DATA_DIR`.
+/// Empty, or `-HASH` of a dev profile's `REDSPOTFY_DATA_DIR`.
 #[cfg_attr(not(any(windows, target_os = "linux")), allow(dead_code))]
 fn profile_suffix() -> String {
-    match std::env::var_os("YTM_DATA_DIR") {
+    match std::env::var_os("REDSPOTFY_DATA_DIR") {
         Some(dir) => {
             use std::hash::{Hash, Hasher};
             let mut h = std::collections::hash_map::DefaultHasher::new();
@@ -128,7 +129,7 @@ fn profile_suffix() -> String {
 fn runtime_dir(xdg: Option<std::ffi::OsString>, tmp: &std::path::Path, uid: u32) -> std::path::PathBuf {
     match xdg.map(std::path::PathBuf::from) {
         Some(dir) if dir.has_root() => dir,
-        _ => tmp.join(format!("ytm-rs-{uid}")),
+        _ => tmp.join(format!("redspotfy-{uid}")),
     }
 }
 
@@ -187,7 +188,7 @@ mod unix {
 
     /// The socket and its lock file in `dir`.
     pub(super) fn paths(dir: &Path) -> (PathBuf, PathBuf) {
-        let name = format!("ytm-rs-jam{}", super::profile_suffix());
+        let name = format!("redspotfy-jam{}", super::profile_suffix());
         (dir.join(format!("{name}.sock")), dir.join(format!("{name}.lock")))
     }
 
@@ -402,16 +403,16 @@ mod win {
         }
     }
 
-    /// Register the `ytm-rs:` URL protocol for this user, pointing at this exe.
+    /// Register the `redspotfy:` URL protocol for this user, pointing at this exe.
     /// Call only from an installed copy, so dev builds don't take the protocol over.
     pub fn register_protocol() {
         match std::env::current_exe() {
             Ok(exe) => {
-                if let Err(e) = register_at(HKEY_CURRENT_USER, r"Software\Classes\ytm-rs", &exe.to_string_lossy()) {
-                    log::warn!("registering the ytm-rs: protocol: {e}");
+                if let Err(e) = register_at(HKEY_CURRENT_USER, r"Software\Classes\redspotfy", &exe.to_string_lossy()) {
+                    log::warn!("registering the redspotfy: protocol: {e}");
                 }
             }
-            Err(e) => log::warn!("registering the ytm-rs: protocol: {e}"),
+            Err(e) => log::warn!("registering the redspotfy: protocol: {e}"),
         }
     }
 
@@ -432,7 +433,7 @@ mod win {
             }
             .ok()
         };
-        set("", "", "URL:ytm-rs Protocol")?;
+        set("", "", "URL:redspotfy Protocol")?;
         set("", "URL Protocol", "")?;
         set("DefaultIcon", "", &format!("\"{exe}\",0"))?;
         set(r"shell\open\command", "", &format!("\"{exe}\" \"%1\""))
@@ -445,18 +446,18 @@ mod tests {
 
     #[test]
     fn app_protocol() {
-        assert_eq!(parse("ytm-rs://jam/ABC234").as_deref(), Some("ABC234"));
-        assert_eq!(parse("ytm-rs://jam/abc234/").as_deref(), Some("ABC234"));
+        assert_eq!(parse("redspotfy://jam/ABC234").as_deref(), Some("ABC234"));
+        assert_eq!(parse("redspotfy://jam/abc234/").as_deref(), Some("ABC234"));
         assert_eq!(parse("YTM-RS://JAM/aBc234").as_deref(), Some("ABC234"));
-        assert_eq!(parse("\"ytm-rs://jam/ABC234\"").as_deref(), Some("ABC234"));
-        assert_eq!(parse("ytm-rs://jam/?c=xyz789").as_deref(), Some("XYZ789"));
+        assert_eq!(parse("\"redspotfy://jam/ABC234\"").as_deref(), Some("ABC234"));
+        assert_eq!(parse("redspotfy://jam/?c=xyz789").as_deref(), Some("XYZ789"));
     }
 
     #[test]
     fn share_link() {
-        assert_eq!(parse("https://grapedjuice.github.io/ytm-rs/jam/?c=ABC234").as_deref(), Some("ABC234"));
-        assert_eq!(parse("https://grapedjuice.github.io/ytm-rs/jam?c=abc234").as_deref(), Some("ABC234"));
-        assert_eq!(parse("https://grapedjuice.github.io/ytm-rs/jam/index.html?x=1&c=abc234#top").as_deref(), Some("ABC234"));
+        assert_eq!(parse("https://danilobrayann.github.io/redspotfy/jam/?c=ABC234").as_deref(), Some("ABC234"));
+        assert_eq!(parse("https://danilobrayann.github.io/redspotfy/jam?c=abc234").as_deref(), Some("ABC234"));
+        assert_eq!(parse("https://danilobrayann.github.io/redspotfy/jam/index.html?x=1&c=abc234#top").as_deref(), Some("ABC234"));
     }
 
     #[test]
@@ -465,15 +466,15 @@ mod tests {
             "",
             "%1",
             "ABC234",
-            "ytm-rs://jam/",
-            "ytm-rs://jam/ABC23",      // too short
-            "ytm-rs://jam/ABC2345",    // too long
-            "ytm-rs://jam/ABC0I1",     // 0, I, 1 are not in the alphabet
-            "ytm-rs://jam/ABC234/xyz", // extra path
-            "ytm-rs://room/ABC234",
-            "https://example.com/ytm-rs/jam/?c=ABC234",
-            "https://grapedjuice.github.io/ytm-rs/?c=ABC234",
-            "https://grapedjuice.github.io/ytm-rs/jam/",
+            "redspotfy://jam/",
+            "redspotfy://jam/ABC23",      // too short
+            "redspotfy://jam/ABC2345",    // too long
+            "redspotfy://jam/ABC0I1",     // 0, I, 1 are not in the alphabet
+            "redspotfy://jam/ABC234/xyz", // extra path
+            "redspotfy://room/ABC234",
+            "https://example.com/redspotfy/jam/?c=ABC234",
+            "https://danilobrayann.github.io/redspotfy/?c=ABC234",
+            "https://danilobrayann.github.io/redspotfy/jam/",
             "--login",
         ] {
             assert_eq!(parse(bad), None, "{bad}");
@@ -494,7 +495,7 @@ mod tests {
         assert_eq!(runtime_dir(Some("/run/user/1000".into()), tmp, 1000), std::path::Path::new("/run/user/1000"));
         // Unset, empty or relative: our own directory in the temp dir, never the working one.
         for xdg in [None, Some("".into()), Some("run".into())] {
-            assert_eq!(runtime_dir(xdg, tmp, 1000), std::path::Path::new("/tmp/ytm-rs-1000"));
+            assert_eq!(runtime_dir(xdg, tmp, 1000), std::path::Path::new("/tmp/redspotfy-1000"));
         }
     }
 
@@ -503,7 +504,7 @@ mod tests {
     fn single_instance_socket() {
         use std::os::unix::fs::PermissionsExt;
         use std::os::unix::net::{UnixListener, UnixStream};
-        let dir = std::env::temp_dir().join(format!("ytm-rs-deeplink-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("redspotfy-deeplink-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir(&dir).unwrap();
         let uid = unsafe { libc::getuid() };
@@ -544,8 +545,8 @@ mod tests {
     fn register_under_scratch_key() {
         use windows::Win32::System::Registry::{HKEY_CURRENT_USER, RRF_RT_REG_SZ, RegDeleteTreeW, RegGetValueW};
         use windows::core::HSTRING;
-        let key = format!(r"Software\ytm-rs-deeplink-test-{}", std::process::id());
-        win::register_at(HKEY_CURRENT_USER, &key, r"C:\x\ytm-rs.exe").unwrap();
+        let key = format!(r"Software\redspotfy-deeplink-test-{}", std::process::id());
+        win::register_at(HKEY_CURRENT_USER, &key, r"C:\x\redspotfy.exe").unwrap();
         let read = |sub: &str, name: &str| -> String {
             let mut buf = [0u16; 256];
             let mut len = (buf.len() * 2) as u32;
@@ -569,9 +570,9 @@ mod tests {
             let _ = RegDeleteTreeW(HKEY_CURRENT_USER, &HSTRING::from(key.as_str()));
             let _ = windows::Win32::System::Registry::RegDeleteKeyW(HKEY_CURRENT_USER, &HSTRING::from(key.as_str()));
         }
-        assert_eq!(results.0, "URL:ytm-rs Protocol");
+        assert_eq!(results.0, "URL:redspotfy Protocol");
         assert_eq!(results.1, "");
-        assert_eq!(results.2, r#""C:\x\ytm-rs.exe",0"#);
-        assert_eq!(results.3, r#""C:\x\ytm-rs.exe" "%1""#);
+        assert_eq!(results.2, r#""C:\x\redspotfy.exe",0"#);
+        assert_eq!(results.3, r#""C:\x\redspotfy.exe" "%1""#);
     }
 }

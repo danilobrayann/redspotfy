@@ -5,7 +5,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thanks for reporting. Please [search the open issues](https://github.com/grapedjuice/ytm-rs/issues) first, and make the title say what goes wrong ("Songs stop after a minute when signed in", not "Playback broken").
+        Thanks for reporting. Please [search the open issues](https://github.com/danilobrayann/redspotfy/issues) first, and make the title say what goes wrong ("Songs stop after a minute when signed in", not "Playback broken").
   - type: textarea
     id: what
     attributes:
@@ -27,7 +27,7 @@ body:
   - type: input
     id: version
     attributes:
-      label: ytm-rs version
+      label: redspotfy version
       description: Under Settings › About. Please check it still happens on the latest release.
       placeholder: "0.2.34"
     validations:
@@ -67,11 +67,11 @@ body:
     attributes:
       label: Log
       description: |
-        Paste the part of `ytm-rs.log` from around when it happened. If you've restarted the app since, it's in `ytm-rs.prev.log` instead. Have a look through it before posting and take out anything you'd rather keep private.
+        Paste the part of `redspotfy.log` from around when it happened. If you've restarted the app since, it's in `redspotfy.prev.log` instead. Have a look through it before posting and take out anything you'd rather keep private.
 
-        - Windows: `%APPDATA%\ytm-rs\data`
-        - macOS: `~/Library/Application Support/ytm-rs`
-        - Linux: `~/.local/share/ytm-rs`
+        - Windows: `%APPDATA%\redspotfy\data`
+        - macOS: `~/Library/Application Support/redspotfy`
+        - Linux: `~/.local/share/redspotfy`
         - Portable: the `data` folder beside the app
       render: text
   - type: textarea

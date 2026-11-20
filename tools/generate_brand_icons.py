@@ -2,7 +2,7 @@ import os, sys, struct, io, math
 from PIL import Image, ImageDraw, ImageFilter, ImageEnhance, ImageChops
 import pathlib
 
-_ROOT = pathlib.Path(r"c:\Users\danil\OneDrive\Documentos\GitHub\ytm-rs")
+_ROOT = pathlib.Path(r"c:\Users\danil\OneDrive\Documentos\GitHub\redspotfy")
 SRC_PATH = r"C:\Users\danil\.gemini\antigravity\brain\a38c7cf3-61ba-4178-a111-e70d4c49d35f\.user_uploaded\media_1795043714392_8c5f9ee9.png"
 ASSETS_ICON = str(_ROOT / "assets" / "icon")
 VARIANTS_DIR = str(_ROOT / "assets" / "icon" / "variants")

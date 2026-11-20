@@ -1,16 +1,16 @@
-; Inno Setup script for ytm-rs.
+; Inno Setup script for redspotfy.
 ; Build: cargo build --release, then
-;   iscc installer\ytm-rs.iss
-; Output: installer\Output\ytm-rs-setup-<version>.exe
+;   iscc installer\redspotfy.iss
+; Output: installer\Output\redspotfy-setup-<version>.exe
 ; ARM64: cargo build --release --target aarch64-pc-windows-msvc, then
-;   iscc /DArm64 installer\ytm-rs.iss  ->  ytm-rs-setup-<version>-arm64.exe
+;   iscc /DArm64 installer\redspotfy.iss  ->  redspotfy-setup-<version>-arm64.exe
 
 #define AppName "RedSpotfy"
 ; A nightly build passes its own: iscc /DAppVersion=0.2.34-nightly.20261110
 #ifndef AppVersion
   #define AppVersion "2.0.0"
 #endif
-#define AppExe "ytm-rs.exe"
+#define AppExe "redspotfy.exe"
 #ifdef Arm64
   #define Arch "arm64"
   #define Suffix "-arm64"
@@ -26,8 +26,8 @@ AppId={{6E0B7C4A-2D1F-4C8E-9B3A-7F5D1E2A9C40}
 AppName={#AppName}
 AppVersion={#AppVersion}
 AppPublisher=grapedjuice
-AppPublisherURL=https://github.com/grapedjuice/ytm-rs
-AppSupportURL=https://github.com/grapedjuice/ytm-rs/issues
+AppPublisherURL=https://github.com/danilobrayann/redspotfy
+AppSupportURL=https://github.com/danilobrayann/redspotfy/issues
 DefaultDirName={autopf}\{#AppName}
 DefaultGroupName={#AppName}
 DisableProgramGroupPage=yes
@@ -37,7 +37,7 @@ PrivilegesRequiredOverridesAllowed=dialog
 ArchitecturesAllowed={#Arch}
 ArchitecturesInstallIn64BitMode={#Arch}
 MinVersion=10.0
-OutputBaseFilename=ytm-rs-setup-{#AppVersion}{#Suffix}
+OutputBaseFilename=redspotfy-setup-{#AppVersion}{#Suffix}
 Compression=lzma2/ultra
 SolidCompression=yes
 WizardStyle=modern
@@ -49,7 +49,7 @@ CloseApplications=yes
 [Messages]
 ; Setup shows this when the processor isn't allowed, and on ARM64 that only happens on an
 ; Intel or AMD PC, where the default "doesn't support this version of Windows" misleads (#117).
-WindowsVersionNotSupported=This is the ytm-rs installer for Windows on ARM PCs, and this PC has an Intel or AMD processor.%n%nDownload ytm-rs-setup-{#AppVersion}.exe instead, the one without -arm64 in its name.
+WindowsVersionNotSupported=This is the redspotfy installer for Windows on ARM PCs, and this PC has an Intel or AMD processor.%n%nDownload redspotfy-setup-{#AppVersion}.exe instead, the one without -arm64 in its name.
 #endif
 
 [Tasks]
@@ -66,16 +66,16 @@ Name: "{group}\Uninstall {#AppName}"; Filename: "{uninstallexe}"
 Name: "{autodesktop}\{#AppName}"; Filename: "{app}\{#AppExe}"; Tasks: desktopicon
 
 [Registry]
-; ytm-rs:// links (jam invites). HKA is HKCU for per-user installs, HKLM for all-users.
+; redspotfy:// links (jam invites). HKA is HKCU for per-user installs, HKLM for all-users.
 ; The installed app also re-registers itself under HKCU on launch.
-Root: HKA; Subkey: "Software\Classes\ytm-rs"; ValueType: string; ValueName: ""; ValueData: "URL:ytm-rs Protocol"; Flags: uninsdeletekey
-Root: HKA; Subkey: "Software\Classes\ytm-rs"; ValueType: string; ValueName: "URL Protocol"; ValueData: ""
-Root: HKA; Subkey: "Software\Classes\ytm-rs\DefaultIcon"; ValueType: string; ValueName: ""; ValueData: """{app}\{#AppExe}"",0"
-Root: HKA; Subkey: "Software\Classes\ytm-rs\shell\open\command"; ValueType: string; ValueName: ""; ValueData: """{app}\{#AppExe}"" ""%1"""
+Root: HKA; Subkey: "Software\Classes\redspotfy"; ValueType: string; ValueName: ""; ValueData: "URL:redspotfy Protocol"; Flags: uninsdeletekey
+Root: HKA; Subkey: "Software\Classes\redspotfy"; ValueType: string; ValueName: "URL Protocol"; ValueData: ""
+Root: HKA; Subkey: "Software\Classes\redspotfy\DefaultIcon"; ValueType: string; ValueName: ""; ValueData: """{app}\{#AppExe}"",0"
+Root: HKA; Subkey: "Software\Classes\redspotfy\shell\open\command"; ValueType: string; ValueName: ""; ValueData: """{app}\{#AppExe}"" ""%1"""
 
 [UninstallDelete]
 ; Installers downloaded by the in-app updater.
-Type: filesandordirs; Name: "{userappdata}\ytm-rs\data\updates"
+Type: filesandordirs; Name: "{userappdata}\redspotfy\data\updates"
 ; The app's own Start menu shortcut on an all-users install, for a custom app icon.
 Type: files; Name: "{userprograms}\{#AppName}\{#AppName}.lnk"
 Type: dirifempty; Name: "{userprograms}\{#AppName}"

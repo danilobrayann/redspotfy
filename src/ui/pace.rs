@@ -25,16 +25,16 @@ struct Pace {
 /// eframe has no hook after a frame is shown, so the wait comes after input is read:
 /// input that arrives meanwhile shows a frame later, about what vsync costs anyway.
 ///
-/// Dev hooks: YTM_FPS=<hz> holds each frame to exactly 1/<hz> s instead, as vsync does
+/// Dev hooks: REDSPOTFY_FPS=<hz> holds each frame to exactly 1/<hz> s instead, as vsync does
 /// on a visible window of that refresh rate (test windows sit off-screen, where Windows
-/// gives them ~21 fps); YTM_FPS_LOG logs the rate reached every 5 s.
+/// gives them ~21 fps); REDSPOTFY_FPS_LOG logs the rate reached every 5 s.
 pub(super) fn frame(ctx: &egui::Context) {
     // A second pass in the same frame is no new frame.
     if ctx.current_pass_index() > 0 {
         return;
     }
     static DEV_HZ: OnceLock<Option<f64>> = OnceLock::new();
-    let dev_hz = *DEV_HZ.get_or_init(|| std::env::var("YTM_FPS").ok().and_then(|v| v.parse().ok()));
+    let dev_hz = *DEV_HZ.get_or_init(|| std::env::var("REDSPOTFY_FPS").ok().and_then(|v| v.parse().ok()));
     let gap = || match dev_hz {
         Some(hz) => Some(Duration::from_secs_f64(1.0 / hz)),
         None => crate::fullscreen::refresh_rate().map(|hz| Duration::from_secs_f64(0.9 / hz)),
@@ -58,7 +58,7 @@ pub(super) fn frame(ctx: &egui::Context) {
     p.frames += 1;
     let span = p.last.duration_since(p.window).as_secs_f64();
     if span >= 5.0 {
-        if std::env::var_os("YTM_FPS_LOG").is_some() {
+        if std::env::var_os("REDSPOTFY_FPS_LOG").is_some() {
             log::info!("fps {:.1}, longest frame {} ms", p.frames as f64 / span, p.worst.as_millis());
         }
         p.window = p.last;

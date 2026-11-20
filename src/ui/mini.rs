@@ -780,7 +780,7 @@ impl Mini {
         // Its top middle, where it can be grabbed: a sliver on screen isn't enough.
         let r = p.rect_px(frame);
         let grip = Rect::from_center_size(pos2(r.center().x, r.top() + 12.0 * p.scale), vec2(r.width().min(120.0 * p.scale), 16.0 * p.scale));
-        std::env::var_os("YTM_BACKGROUND").is_some() || (self.screens.on_a_monitor)(grip)
+        std::env::var_os("REDSPOTFY_BACKGROUND").is_some() || (self.screens.on_a_monitor)(grip)
     }
 
     /// Move and size the window for the new mode; the step to wait in after.
@@ -800,9 +800,9 @@ impl Mini {
         if to_mini {
             self.full = now_place.map(|p| (p, self.was_maximized));
             let target = match (self.place(), now_place) {
-                // Test runs stay off-screen, where they are; YTM_MINI_W tries other widths.
-                (_, Some(here)) if std::env::var_os("YTM_BACKGROUND").is_some() => {
-                    let w = std::env::var("YTM_MINI_W").ok().and_then(|w| w.parse().ok()).unwrap_or(mini_size().x);
+                // Test runs stay off-screen, where they are; REDSPOTFY_MINI_W tries other widths.
+                (_, Some(here)) if std::env::var_os("REDSPOTFY_BACKGROUND").is_some() => {
+                    let w = std::env::var("REDSPOTFY_MINI_W").ok().and_then(|w| w.parse().ok()).unwrap_or(mini_size().x);
                     clamp_size(Place { w, h: mini_size().y, ..here })
                 }
                 (Some(p), _) if self.visible(p, frame) => p,

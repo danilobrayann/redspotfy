@@ -22,7 +22,7 @@ use tokio_tungstenite::tungstenite::Message;
 
 use crate::model::Track;
 
-/// The relay. `YTM_JAM_SERVER` overrides it (e.g. `ws://127.0.0.1:8787` for `wrangler dev`).
+/// The relay. `REDSPOTFY_JAM_SERVER` overrides it (e.g. `ws://127.0.0.1:8787` for `wrangler dev`).
 const SERVER: &str = "wss://ytm-rs-jam.grapedjuice.workers.dev";
 
 /// Room codes: no 0/O, 1/I/L, so they survive being read out loud.
@@ -319,7 +319,7 @@ impl Conn {
     }
 
     async fn session(&mut self, out: &mut mpsc::UnboundedReceiver<Out>) -> End {
-        let base = std::env::var("YTM_JAM_SERVER").unwrap_or_else(|_| SERVER.to_owned());
+        let base = std::env::var("REDSPOTFY_JAM_SERVER").unwrap_or_else(|_| SERVER.to_owned());
         let name: String = url_encode(&self.name);
         let url = format!("{}/jam/{}?create={}&name={name}&v=1", base.trim_end_matches('/'), self.code, self.create as u8);
         // Through the proxy setting, like everything else.

@@ -5,7 +5,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        One request per issue, please, and [search the existing ones](https://github.com/grapedjuice/ytm-rs/issues?q=is%3Aissue) first: adding a 👍 to one that's already there counts for more than a duplicate.
+        One request per issue, please, and [search the existing ones](https://github.com/danilobrayann/redspotfy/issues?q=is%3Aissue) first: adding a 👍 to one that's already there counts for more than a duplicate.
   - type: textarea
     id: problem
     attributes:

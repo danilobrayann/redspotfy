@@ -16,13 +16,13 @@
     in
     {
       packages = forAllSystems (system: {
-        ytm-rs = (pkgs system).callPackage ./linux/package.nix { };
-        default = self.packages.${system}.ytm-rs;
+        redspotfy = (pkgs system).callPackage ./linux/package.nix { };
+        default = self.packages.${system}.redspotfy;
       });
       apps = forAllSystems (system: {
         default = {
           type = "app";
-          program = "${self.packages.${system}.default}/bin/ytm-rs";
+          program = "${self.packages.${system}.default}/bin/redspotfy";
         };
       });
       devShells = forAllSystems (system: {

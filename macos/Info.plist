@@ -7,11 +7,11 @@
 	<key>CFBundleDisplayName</key>
 	<string>RedSpotfy</string>
 	<key>CFBundleExecutable</key>
-	<string>ytm-rs</string>
+	<string>redspotfy</string>
 	<key>CFBundleIconFile</key>
-	<string>ytm-rs</string>
+	<string>redspotfy</string>
 	<key>CFBundleIdentifier</key>
-	<string>io.github.grapedjuice.ytm-rs</string>
+	<string>io.github.grapedjuice.redspotfy</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>

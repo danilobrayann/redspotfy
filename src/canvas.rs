@@ -2,7 +2,7 @@
 //! covers. Found by searching Apple Music's catalogue for the song, played by
 //! [`crate::video::Loop`]. Nothing is asked unless the listener turned them on.
 //!
-//! Dev hook: `YTM_CANVAS=<HLS URL>` gives every song that clip, without asking Apple.
+//! Dev hook: `REDSPOTFY_CANVAS=<HLS URL>` gives every song that clip, without asking Apple.
 
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
@@ -220,7 +220,7 @@ fn with_index<R>(data_dir: &Path, f: impl FnOnce(&mut Index) -> R) -> R {
 /// The clip standing in for `track`'s cover, if it has one: what was found before, else
 /// Apple Music's.
 pub async fn find(http: &reqwest::Client, data_dir: &Path, track: &Track) -> Option<String> {
-    if let Ok(url) = std::env::var("YTM_CANVAS") {
+    if let Ok(url) = std::env::var("REDSPOTFY_CANVAS") {
         return Some(url);
     }
     let now = now_secs();
@@ -383,7 +383,7 @@ mod tests {
     #[ignore]
     async fn animated_covers_live() {
         let http = reqwest::Client::new();
-        let dir = std::env::temp_dir().join(format!("ytm-canvas-live-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("redspotfy-canvas-live-{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
         let songs = [
             ("Espresso", "Sabrina Carpenter", "Short n' Sweet"),

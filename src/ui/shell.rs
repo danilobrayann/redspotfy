@@ -755,14 +755,14 @@ pub fn sidebar(app: &mut App, ui: &mut Ui) {
             let title = if available { "Update available" } else { "Restart to update" };
             let mut resp = named(resp, title).on_hover_cursor(egui::CursorIcon::PointingHand);
             if collapsed {
-                resp = resp.on_hover_text(if available { format!("ytm-rs {v} is out") } else { format!("Restart to update to ytm-rs {v}") });
+                resp = resp.on_hover_text(if available { format!("redspotfy {v} is out") } else { format!("Restart to update to redspotfy {v}") });
             }
             let h = theme::anim_bool(ui.ctx(), resp.id.with("h"), resp.hovered(), 0.15);
             ui.painter().rect_filled(rect, 12.0, theme::with_alpha(look.accent, 0.22 + 0.12 * h));
             icon_at(ui, pos2(rect.left() + ICON_X, rect.center().y), icon::SPARKLES, 18.0, theme::text());
             if a > 0.0 {
                 ui.painter().text(pos2(rect.left() + 46.0, rect.top() + 17.0), Align2::LEFT_CENTER, title, theme::semibold(13.5), theme::with_alpha(theme::text(), a));
-                ui.painter().text(pos2(rect.left() + 46.0, rect.top() + 35.0), Align2::LEFT_CENTER, format!("ytm-rs {v}"), theme::regular(12.0), theme::with_alpha(theme::text(), 0.75 * a));
+                ui.painter().text(pos2(rect.left() + 46.0, rect.top() + 35.0), Align2::LEFT_CENTER, format!("redspotfy {v}"), theme::regular(12.0), theme::with_alpha(theme::text(), 0.75 * a));
             }
             if resp.clicked() && available {
                 app.notes_dialog = Some(super::notes::NotesDialog { version: v.clone(), ready: true });

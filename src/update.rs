@@ -9,7 +9,7 @@
 //! tarball and renames the new binary over itself as it closes. On macOS, the copy
 //! installed from the disk image downloads the new one and puts the app from it in
 //! place of its own as it closes. A copy from the Linux .deb (a `deb.txt` beside the
-//! binary, in /usr/lib/ytm-rs) can't replace itself: it only says a new version is out
+//! binary, in /usr/lib/redspotfy) can't replace itself: it only says a new version is out
 //! ([`State::Available`]), and the new .deb installs over it. The Arch package (a
 //! `pacman.txt` there instead) does the same with the new package. Every platform has a portable build too (a
 //! `portable.txt` marker; inside the app bundle on macOS), which updates from the
@@ -27,12 +27,12 @@
 //! Two channels: stable follows the latest published release; nightly also takes the
 //! prereleases built from main every night there are new changes (tagged
 //! `v<version>-nightly.<date>`, see the release workflow), whichever is newer. A nightly
-//! build knows it is one from `YTM_NIGHTLY`, set when it was built. Switching back to
+//! build knows it is one from `REDSPOTFY_NIGHTLY`, set when it was built. Switching back to
 //! stable from a nightly installs the latest stable release, though its version is lower.
 //!
-//! Dev hooks: `YTM_UPDATE_FORCE=1` treats any build as installed; `YTM_UPDATE_AS=<ver>`
-//! pretends to be that version; `YTM_UPDATE_DRYRUN=1` logs the install command
-//! instead of running it; `YTM_UPDATE_FEED=<url>` reads the release (or the list of
+//! Dev hooks: `REDSPOTFY_UPDATE_FORCE=1` treats any build as installed; `REDSPOTFY_UPDATE_AS=<ver>`
+//! pretends to be that version; `REDSPOTFY_UPDATE_DRYRUN=1` logs the install command
+//! instead of running it; `REDSPOTFY_UPDATE_FEED=<url>` reads the release (or the list of
 //! releases) from there.
 
 use std::cmp::Ordering;
@@ -65,7 +65,7 @@ pub enum State {
     Checking,
     UpToDate,
     Downloading { version: String, percent: u8 },
-    /// `installer` is the setup exe, or for the portable build the new ytm-rs.exe.
+    /// `installer` is the setup exe, or for the portable build the new redspotfy.exe.
     Ready { version: String, installer: PathBuf },
     /// A newer version is out, for a copy that can't install it itself (the .deb):
     /// `url` is its .deb.
@@ -90,14 +90,14 @@ const NIGHTLY: &str = "-nightly.";
 
 /// The version this was built as: a nightly build adds its build number.
 pub fn build_version() -> String {
-    match option_env!("YTM_NIGHTLY").filter(|n| !n.is_empty()) {
+    match option_env!("REDSPOTFY_NIGHTLY").filter(|n| !n.is_empty()) {
         Some(n) => format!("{}{NIGHTLY}{n}", env!("CARGO_PKG_VERSION")),
         None => env!("CARGO_PKG_VERSION").to_owned(),
     }
 }
 
 pub fn current_version() -> String {
-    std::env::var("YTM_UPDATE_AS").unwrap_or_else(|_| build_version())
+    std::env::var("REDSPOTFY_UPDATE_AS").unwrap_or_else(|_| build_version())
 }
 
 /// Whether `version` is a nightly build's.
@@ -109,7 +109,7 @@ pub fn is_nightly(version: &str) -> bool {
 /// beside the exe, or on Linux `install.sh` its `install.txt`), or on macOS runs from
 /// an app bundle that isn't the portable one, so it's safe to update in place.
 pub fn installed() -> bool {
-    if std::env::var_os("YTM_UPDATE_FORCE").is_some() {
+    if std::env::var_os("REDSPOTFY_UPDATE_FORCE").is_some() {
         return true;
     }
     let Ok(exe) = std::env::current_exe() else { return false };
@@ -152,7 +152,7 @@ pub fn package_step() -> &'static str {
 
 /// On Linux, another copy installed the other way (one from install.sh beside the
 /// .deb's or the Arch package's, or the other way round), which would otherwise be left
-/// behind: the menu and the `ytm-rs` command open the install.sh one. What it's from,
+/// behind: the menu and the `redspotfy` command open the install.sh one. What it's from,
 /// and the command that removes it.
 pub fn other_copy() -> Option<(&'static str, &'static str)> {
     if !cfg!(target_os = "linux") {
@@ -160,13 +160,13 @@ pub fn other_copy() -> Option<(&'static str, &'static str)> {
     }
     let home = std::env::var_os("HOME").map(PathBuf::from)?;
     if packaged() {
-        home.join(".local/lib/ytm-rs/install.txt").exists().then_some(("install.sh", "~/.local/lib/ytm-rs/install.sh --uninstall"))
+        home.join(".local/lib/redspotfy/install.txt").exists().then_some(("install.sh", "~/.local/lib/redspotfy/install.sh --uninstall"))
     } else if !installed() {
         None
-    } else if Path::new("/usr/lib/ytm-rs/deb.txt").exists() {
-        Some(("the .deb", "sudo apt remove ytm-rs"))
+    } else if Path::new("/usr/lib/redspotfy/deb.txt").exists() {
+        Some(("the .deb", "sudo apt remove redspotfy"))
     } else {
-        Path::new("/usr/lib/ytm-rs/pacman.txt").exists().then_some(("the Arch package", "sudo pacman -R ytm-rs"))
+        Path::new("/usr/lib/redspotfy/pacman.txt").exists().then_some(("the Arch package", "sudo pacman -R redspotfy"))
     }
 }
 
@@ -180,10 +180,10 @@ pub fn deb_version(version: &str) -> String {
 /// a nightly (`0.3.0-nightly.20261111`) is `0.3.0.nightly.20261111`, which pacman puts
 /// after its version too.
 fn pacman_package(version: &str, arch: &str) -> String {
-    format!("ytm-rs-{}-1-{arch}.pkg.tar.zst", version.replace('-', "."))
+    format!("redspotfy-{}-1-{arch}.pkg.tar.zst", version.replace('-', "."))
 }
 
-/// The `.app` bundle a binary is in (`X.app/Contents/MacOS/ytm-rs`).
+/// The `.app` bundle a binary is in (`X.app/Contents/MacOS/redspotfy`).
 fn bundle_of(exe: &Path) -> Option<&Path> {
     exe.ancestors().nth(3).filter(|a| a.extension().is_some_and(|x| x == "app"))
 }
@@ -197,11 +197,11 @@ fn asset_name(version: &str) -> String {
     }
     if cfg!(target_os = "linux") && deb() {
         let arch = if arch == "x86_64" { "amd64" } else if arch == "aarch64" { "arm64" } else { arch };
-        return format!("ytm-rs_{}_{arch}.deb", deb_version(version));
+        return format!("redspotfy_{}_{arch}.deb", deb_version(version));
     }
     if cfg!(target_os = "linux") {
         let kind = if portable { "portable-" } else { "" };
-        return format!("ytm-rs-{kind}{version}-linux-{arch}.tar.gz");
+        return format!("redspotfy-{kind}{version}-linux-{arch}.tar.gz");
     }
     // ARM64 Windows builds have their own assets; x64 keeps the original names.
     let (suffix, setup) = if cfg!(target_os = "macos") {
@@ -209,7 +209,7 @@ fn asset_name(version: &str) -> String {
     } else {
         (if cfg!(target_arch = "aarch64") { "-arm64" } else { "" }.to_owned(), "exe")
     };
-    if portable { format!("ytm-rs-portable-{version}{suffix}.zip") } else { format!("ytm-rs-setup-{version}{suffix}.{setup}") }
+    if portable { format!("redspotfy-portable-{version}{suffix}.zip") } else { format!("redspotfy-setup-{version}{suffix}.{setup}") }
 }
 
 /// The portable build's folder: the download ships a `portable.txt` beside the exe
@@ -338,7 +338,7 @@ pub fn apply_main() -> bool {
         }
         // Even after a failure: the installer rolls back, so the old version is still there.
         // After this helper exits, so the next launch can delete it.
-        let exe = Path::new(dir).join("ytm-rs.exe");
+        let exe = Path::new(dir).join("redspotfy.exe");
         if relaunch == "1" && exe.exists() {
             start_after_exit(&exe);
         }
@@ -478,7 +478,7 @@ impl Updater {
         None
     }
 
-    /// How many times ytm-rs has been downloaded: every release asset's GitHub download
+    /// How many times redspotfy has been downloaded: every release asset's GitHub download
     /// count added up (installers, plus the copies the updater fetched). Fetched in the
     /// background the first time it's asked for; `None` until it arrives.
     pub fn downloads(&self) -> Option<u64> {
@@ -549,7 +549,7 @@ impl Updater {
     async fn run(&self, nightly: bool) -> anyhow::Result<State> {
         let http = client()?;
         // Nightlies are prereleases, which the latest release never is: they're in the list.
-        let feed = std::env::var("YTM_UPDATE_FEED").unwrap_or_else(|_| if nightly { format!("{ALL_RELEASES}?per_page=30") } else { LATEST.to_owned() });
+        let feed = std::env::var("REDSPOTFY_UPDATE_FEED").unwrap_or_else(|_| if nightly { format!("{ALL_RELEASES}?per_page=30") } else { LATEST.to_owned() });
         let feed: serde_json::Value = http.get(feed).send().await?.error_for_status()?.json().await?;
         let release = pick_release(feed, nightly).ok_or_else(|| anyhow::anyhow!("no releases found"))?;
         let tag = release["tag_name"].as_str().unwrap_or_default();
@@ -612,7 +612,7 @@ impl Updater {
                 }
             }
         }
-        let unpacked = self.dir.join(format!("ytm-rs-{version}"));
+        let unpacked = self.dir.join(format!("redspotfy-{version}"));
         let ready = if cfg!(target_os = "macos") && !portable {
             open_dmg(&path, &unpacked)?
         } else if portable || cfg!(unix) {
@@ -658,7 +658,7 @@ impl Updater {
         let helper = self.dir.join(HELPER);
         let mut cmd = Command::new(&helper);
         cmd.arg(APPLY_FLAG).arg(std::process::id().to_string()).arg(installer).arg(dir).arg(scope).arg(if relaunch { "1" } else { "0" });
-        if std::env::var_os("YTM_UPDATE_DRYRUN").is_some() {
+        if std::env::var_os("REDSPOTFY_UPDATE_DRYRUN").is_some() {
             log::info!("update (dry run): {cmd:?}");
             return true;
         }
@@ -707,7 +707,7 @@ fn all_users(dir: &Path) -> bool {
 #[cfg(windows)]
 fn swap_exe(new: &Path, exe: &Path, relaunch: bool) -> bool {
     let (old, next) = (exe.with_extension("exe.old"), exe.with_extension("exe.new"));
-    if std::env::var_os("YTM_UPDATE_DRYRUN").is_some() {
+    if std::env::var_os("REDSPOTFY_UPDATE_DRYRUN").is_some() {
         log::info!("update (dry run): {} aside to {}, {} in its place", exe.display(), old.display(), new.display());
         return true;
     }
@@ -740,8 +740,8 @@ fn swap_exe(new: &Path, exe: &Path, relaunch: bool) -> bool {
 #[cfg(unix)]
 fn replace_binary(new: &Path, exe: &Path, relaunch: bool) -> bool {
     use std::os::unix::fs::PermissionsExt;
-    let tmp = exe.with_file_name(".ytm-rs.new");
-    if std::env::var_os("YTM_UPDATE_DRYRUN").is_some() {
+    let tmp = exe.with_file_name(".redspotfy.new");
+    if std::env::var_os("REDSPOTFY_UPDATE_DRYRUN").is_some() {
         log::info!("update (dry run): {} over {}", new.display(), exe.display());
         return true;
     }
@@ -766,8 +766,8 @@ fn replace_binary(new: &Path, exe: &Path, relaunch: bool) -> bool {
 #[cfg(target_os = "macos")]
 fn replace_bundle(new: &Path, app: &Path, relaunch: bool) -> bool {
     let parent = app.parent().unwrap_or(Path::new("/"));
-    let (tmp, old) = (parent.join(".ytm-rs.app.new"), parent.join(".ytm-rs.app.old"));
-    if std::env::var_os("YTM_UPDATE_DRYRUN").is_some() {
+    let (tmp, old) = (parent.join(".redspotfy.app.new"), parent.join(".redspotfy.app.old"));
+    if std::env::var_os("REDSPOTFY_UPDATE_DRYRUN").is_some() {
         log::info!("update (dry run): {} in place of {}", new.display(), app.display());
         return true;
     }
@@ -794,7 +794,7 @@ fn replace_bundle(new: &Path, app: &Path, relaunch: bool) -> bool {
     let _ = std::fs::remove_dir_all(&old);
     log::info!("update: replaced {}", app.display());
     if relaunch {
-        start_after_exit(&app.join("Contents/MacOS/ytm-rs"));
+        start_after_exit(&app.join("Contents/MacOS/redspotfy"));
     }
     true
 }
@@ -806,9 +806,9 @@ fn open_dmg(dmg: &Path, dir: &Path) -> anyhow::Result<PathBuf> {
     std::fs::create_dir_all(&mnt)?;
     let attached = std::process::Command::new("hdiutil").args(["attach", "-nobrowse", "-readonly", "-noautoopen", "-quiet", "-mountpoint"]).arg(&mnt).arg(dmg).status()?;
     anyhow::ensure!(attached.success(), "couldn't open {}", dmg.display());
-    let copied = std::process::Command::new("ditto").arg(mnt.join("ytm-rs.app")).arg(dir.join("ytm-rs.app")).status();
+    let copied = std::process::Command::new("ditto").arg(mnt.join("redspotfy.app")).arg(dir.join("redspotfy.app")).status();
     let _ = std::process::Command::new("hdiutil").args(["detach", "-quiet"]).arg(&mnt).status();
-    let exe = dir.join("ytm-rs.app/Contents/MacOS/ytm-rs");
+    let exe = dir.join("redspotfy.app/Contents/MacOS/redspotfy");
     anyhow::ensure!(copied.is_ok_and(|s| s.success()) && exe.exists(), "couldn't copy the app out of {}", dmg.display());
     Ok(exe)
 }
@@ -834,20 +834,20 @@ fn unzip_exe(zip: &Path, dir: &Path) -> anyhow::Result<PathBuf> {
     }
     let status = cmd.status()?;
     #[cfg(windows)]
-    let exe = dir.join("ytm-rs.exe");
+    let exe = dir.join("redspotfy.exe");
     // Everything is in one top-level folder: the binary, or on macOS the app bundle.
     #[cfg(not(windows))]
     let exe = std::fs::read_dir(dir)?
         .flatten()
-        .flat_map(|e| [e.path().join("ytm-rs"), e.path().join("ytm-rs.app/Contents/MacOS/ytm-rs")])
+        .flat_map(|e| [e.path().join("redspotfy"), e.path().join("redspotfy.app/Contents/MacOS/redspotfy")])
         .find(|p| p.is_file())
-        .unwrap_or_else(|| dir.join("ytm-rs"));
+        .unwrap_or_else(|| dir.join("redspotfy"));
     anyhow::ensure!(status.success() && exe.exists(), "couldn't unpack {}", zip.display());
     Ok(exe)
 }
 
 fn client() -> anyhow::Result<reqwest::Client> {
-    Ok(crate::proxy::apply(reqwest::Client::builder()).user_agent(concat!("ytm-rs/", env!("CARGO_PKG_VERSION"))).connect_timeout(std::time::Duration::from_secs(10)).read_timeout(std::time::Duration::from_secs(30)).build()?)
+    Ok(crate::proxy::apply(reqwest::Client::builder()).user_agent(concat!("redspotfy/", env!("CARGO_PKG_VERSION"))).connect_timeout(std::time::Duration::from_secs(10)).read_timeout(std::time::Duration::from_secs(30)).build()?)
 }
 
 #[cfg(test)]
@@ -865,9 +865,9 @@ mod tests {
     /// The names makepkg gives linux/arch.sh's package, which the Arch copy looks for.
     #[test]
     fn pacman_packages() {
-        assert_eq!(pacman_package("0.3.0", "x86_64"), "ytm-rs-0.3.0-1-x86_64.pkg.tar.zst");
-        assert_eq!(pacman_package("0.3.0-nightly.20261111", "x86_64"), "ytm-rs-0.3.0.nightly.20261111-1-x86_64.pkg.tar.zst");
-        assert_eq!(pacman_package("0.3.0-nightly.20261111.2", "x86_64"), "ytm-rs-0.3.0.nightly.20261111.2-1-x86_64.pkg.tar.zst");
+        assert_eq!(pacman_package("0.3.0", "x86_64"), "redspotfy-0.3.0-1-x86_64.pkg.tar.zst");
+        assert_eq!(pacman_package("0.3.0-nightly.20261111", "x86_64"), "redspotfy-0.3.0.nightly.20261111-1-x86_64.pkg.tar.zst");
+        assert_eq!(pacman_package("0.3.0-nightly.20261111.2", "x86_64"), "redspotfy-0.3.0.nightly.20261111.2-1-x86_64.pkg.tar.zst");
     }
 
     #[test]

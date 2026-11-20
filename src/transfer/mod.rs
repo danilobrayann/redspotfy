@@ -653,8 +653,8 @@ impl Transfer {
                     Source::Liked => client.liked(progress).await?,
                 };
                 let mut playlist = playlist;
-                // Dev hook: YTM_TRANSFER_LIMIT=<n> keeps the first n songs.
-                if let Some(n) = std::env::var("YTM_TRANSFER_LIMIT").ok().and_then(|n| n.parse().ok()) {
+                // Dev hook: REDSPOTFY_TRANSFER_LIMIT=<n> keeps the first n songs.
+                if let Some(n) = std::env::var("REDSPOTFY_TRANSFER_LIMIT").ok().and_then(|n| n.parse().ok()) {
                     playlist.tracks.truncate(n);
                 }
                 self.with_job(|j| {
@@ -760,8 +760,8 @@ impl Transfer {
         });
         anyhow::ensure!(!ids.is_empty(), "None of the songs were found on YouTube Music");
         let duplicates = picked - ids.len();
-        // Dev hook: YTM_TRANSFER_DRY=1 does everything but add the songs.
-        let dry = std::env::var_os("YTM_TRANSFER_DRY").is_some();
+        // Dev hook: REDSPOTFY_TRANSFER_DRY=1 does everything but add the songs.
+        let dry = std::env::var_os("REDSPOTFY_TRANSFER_DRY").is_some();
         let (playlists, already) = match &dest {
             _ if dry => (Vec::new(), 0),
             Dest::Playlist(title) => (self.create_playlists(api, title, &ids).await?, 0),
@@ -1360,11 +1360,11 @@ mod tests {
 mod live {
     /// A signed-in session's health: the validity check the app signs out on, a signed-in
     /// request, a cookie rotation, then both again.
-    /// `YTM_DATA_DIR=<profile> cargo test --release -- --ignored session_live --nocapture`
+    /// `REDSPOTFY_DATA_DIR=<profile> cargo test --release -- --ignored session_live --nocapture`
     #[tokio::test]
     #[ignore]
     async fn session_live() {
-        let dir = std::path::PathBuf::from(std::env::var("YTM_DATA_DIR").unwrap());
+        let dir = std::path::PathBuf::from(std::env::var("REDSPOTFY_DATA_DIR").unwrap());
         let api = crate::ytmapi::Api::new(&dir);
         let a = api.account().expect("no session in the vault");
         let names = |c: &str| c.split(';').filter_map(|kv| kv.trim().split_once('=').map(|(k, _)| k.to_owned())).collect::<Vec<_>>().join(",");
@@ -1391,17 +1391,17 @@ mod live {
     /// The bulk paths end to end on a test account: searches the way a transfer does,
     /// likes everything found the way a selection or transfer does, then unlikes it all,
     /// checking Liked Music after each and timing them.
-    /// `YTM_DATA_DIR=<test profile> cargo test --release -- --ignored bulk_live --nocapture`
+    /// `REDSPOTFY_DATA_DIR=<test profile> cargo test --release -- --ignored bulk_live --nocapture`
     #[tokio::test]
     #[ignore]
     async fn bulk_live() {
         use futures_util::{StreamExt, stream};
         use std::time::Instant;
-        let _ = env_logger::builder().filter_level(log::LevelFilter::Warn).filter_module("ytm_rs::ytmapi", log::LevelFilter::Info).try_init();
-        let dir = std::path::PathBuf::from(std::env::var("YTM_DATA_DIR").unwrap());
+        let _ = env_logger::builder().filter_level(log::LevelFilter::Warn).filter_module("redspotfy::ytmapi", log::LevelFilter::Info).try_init();
+        let dir = std::path::PathBuf::from(std::env::var("REDSPOTFY_DATA_DIR").unwrap());
         let api = crate::ytmapi::Api::new(&dir);
         assert!(api.account().is_some(), "no session in the vault");
-        let n: usize = std::env::var("YTM_BULK_N").ok().and_then(|v| v.parse().ok()).unwrap_or(150);
+        let n: usize = std::env::var("REDSPOTFY_BULK_N").ok().and_then(|v| v.parse().ok()).unwrap_or(150);
         async fn listed(api: &crate::ytmapi::Api) -> std::collections::HashSet<String> {
             crate::ytm::playlist(api, "LM", true, None).await.map(|p| p.tracks.into_iter().map(|t| t.id).collect()).unwrap_or_default()
         }
@@ -1448,11 +1448,11 @@ mod live {
     }
 
     /// Unlikes everything in Liked Music the way a selection does, and checks.
-    /// `YTM_DATA_DIR=<test profile> cargo test --release -- --ignored unlike_all_live --nocapture`
+    /// `REDSPOTFY_DATA_DIR=<test profile> cargo test --release -- --ignored unlike_all_live --nocapture`
     #[tokio::test]
     #[ignore]
     async fn unlike_all_live() {
-        let dir = std::path::PathBuf::from(std::env::var("YTM_DATA_DIR").unwrap());
+        let dir = std::path::PathBuf::from(std::env::var("REDSPOTFY_DATA_DIR").unwrap());
         let api = crate::ytmapi::Api::new(&dir);
         let ids: Vec<String> = crate::ytm::playlist(&api, "LM", true, None).await.unwrap().tracks.into_iter().map(|t| t.id).collect();
         let t = std::time::Instant::now();
@@ -1467,7 +1467,7 @@ mod live {
     #[tokio::test]
     #[ignore]
     async fn refusals_live() {
-        let dir = std::env::temp_dir().join("ytm-rs-refusals-test");
+        let dir = std::env::temp_dir().join("redspotfy-refusals-test");
         let api = crate::ytmapi::Api::new(&dir);
         let visitor = api.visitor_data(false).await.unwrap();
         let http = crate::proxy::http();
@@ -1501,23 +1501,23 @@ mod live {
     }
 
     /// Read-only, signed out: matches songs from a saved transfer the way a transfer's
-    /// first pass does, and times it. `YTM_MATCH_N` songs (200) after `YTM_MATCH_SKIP` (0),
-    /// `YTM_CONC` at once (`SEARCHES`).
-    /// `YTM_SAVED=<transfers/x.json> cargo test --release -- --ignored match_speed_live --nocapture`
+    /// first pass does, and times it. `REDSPOTFY_MATCH_N` songs (200) after `REDSPOTFY_MATCH_SKIP` (0),
+    /// `REDSPOTFY_CONC` at once (`SEARCHES`).
+    /// `REDSPOTFY_SAVED=<transfers/x.json> cargo test --release -- --ignored match_speed_live --nocapture`
     #[tokio::test]
     #[ignore]
     async fn match_speed_live() {
         use futures_util::{StreamExt, stream};
-        let file = std::env::var("YTM_SAVED").unwrap();
+        let file = std::env::var("REDSPOTFY_SAVED").unwrap();
         let v: serde_json::Value = serde_json::from_slice(&std::fs::read(file).unwrap()).unwrap();
-        let n: usize = std::env::var("YTM_MATCH_N").ok().and_then(|v| v.parse().ok()).unwrap_or(200);
+        let n: usize = std::env::var("REDSPOTFY_MATCH_N").ok().and_then(|v| v.parse().ok()).unwrap_or(200);
         let tracks: Vec<super::Track> = serde_json::from_value(v["tracks"].clone()).unwrap();
-        let tracks: Vec<super::Track> = tracks.into_iter().filter(|t| !t.local).skip(std::env::var("YTM_MATCH_SKIP").ok().and_then(|v| v.parse().ok()).unwrap_or(0)).take(n).collect();
-        let _ = env_logger::builder().filter_level(log::LevelFilter::Warn).filter_module("ytm_rs::ytmapi", log::LevelFilter::Info).is_test(false).try_init();
-        let api = crate::ytmapi::Api::new(&std::env::temp_dir().join("ytm-rs-match-speed"));
+        let tracks: Vec<super::Track> = tracks.into_iter().filter(|t| !t.local).skip(std::env::var("REDSPOTFY_MATCH_SKIP").ok().and_then(|v| v.parse().ok()).unwrap_or(0)).take(n).collect();
+        let _ = env_logger::builder().filter_level(log::LevelFilter::Warn).filter_module("redspotfy::ytmapi", log::LevelFilter::Info).is_test(false).try_init();
+        let api = crate::ytmapi::Api::new(&std::env::temp_dir().join("redspotfy-match-speed"));
         assert!(api.account().is_none());
         let t0 = std::time::Instant::now();
-        let results: Vec<_> = stream::iter(tracks.iter()).map(|t| super::search_song(&api, t)).buffer_unordered(std::env::var("YTM_CONC").ok().and_then(|v| v.parse().ok()).unwrap_or(super::SEARCHES)).collect().await;
+        let results: Vec<_> = stream::iter(tracks.iter()).map(|t| super::search_song(&api, t)).buffer_unordered(std::env::var("REDSPOTFY_CONC").ok().and_then(|v| v.parse().ok()).unwrap_or(super::SEARCHES)).collect().await;
         let sure = results.iter().filter(|r| matches!(r, Ok(Some((_, true))))).count();
         let unsure = results.iter().filter(|r| matches!(r, Ok(Some((_, false))) | Ok(None))).count();
         let failed = results.iter().filter(|r| r.is_err()).count();
@@ -1530,7 +1530,7 @@ mod live {
     #[tokio::test]
     #[ignore]
     async fn artist_thumbs_live() {
-        let dir = std::env::temp_dir().join("ytm-rs-thumbs-test");
+        let dir = std::env::temp_dir().join("redspotfy-thumbs-test");
         let api = crate::ytmapi::Api::new(&dir);
         for c in crate::ytm::search_cards(&api, "drake", crate::ytm::Filter::Artists, false).await.unwrap().iter().take(5) {
             println!("{}: {:?}", c.title, c.thumbs.iter().map(|t| format!("{}x{} {}", t.width, t.height, t.url)).collect::<Vec<_>>());
@@ -1538,11 +1538,11 @@ mod live {
     }
 
     /// Read-only: what music.youtube.com does from a Liked Music row's menu and like button.
-    /// `YTM_DATA_DIR=<profile> cargo test --release -- --ignored liked_menu_live --nocapture`
+    /// `REDSPOTFY_DATA_DIR=<profile> cargo test --release -- --ignored liked_menu_live --nocapture`
     #[tokio::test]
     #[ignore]
     async fn liked_menu_live() {
-        let dir = std::path::PathBuf::from(std::env::var("YTM_DATA_DIR").unwrap());
+        let dir = std::path::PathBuf::from(std::env::var("REDSPOTFY_DATA_DIR").unwrap());
         let api = crate::ytmapi::Api::new(&dir);
         assert!(api.account().is_some(), "no session in the vault");
         let v = api.call("browse", serde_json::json!({ "browseId": "VLLM" }), true).await.unwrap();
@@ -1564,12 +1564,12 @@ mod live {
     /// On a test account: likes songs from a radio, then takes them out of Liked Music three
     /// ways, 20 each (fast unlikes, one playlist edit, unlikes 400 ms apart), and watches
     /// what Liked Music lists after each.
-    /// `YTM_DATA_DIR=<test profile> cargo test --release -- --ignored removal_methods_live --nocapture`
+    /// `REDSPOTFY_DATA_DIR=<test profile> cargo test --release -- --ignored removal_methods_live --nocapture`
     #[tokio::test]
     #[ignore]
     async fn removal_methods_live() {
         use std::time::{Duration, Instant};
-        let dir = std::path::PathBuf::from(std::env::var("YTM_DATA_DIR").unwrap());
+        let dir = std::path::PathBuf::from(std::env::var("REDSPOTFY_DATA_DIR").unwrap());
         let api = crate::ytmapi::Api::new(&dir);
         assert!(api.account().is_some(), "no session in the vault");
         async fn liked(api: &crate::ytmapi::Api) -> crate::backend::Collection {
@@ -1647,24 +1647,24 @@ mod live {
         watch(&api, c, t).await;
     }
 
-    /// How YouTube Music takes a run of unlikes: unlikes the newest `YTM_LAG_N` liked songs
-    /// `YTM_LAG_GAP` ms apart, watches Liked Music, then likes them again oldest first so
+    /// How YouTube Music takes a run of unlikes: unlikes the newest `REDSPOTFY_LAG_N` liked songs
+    /// `REDSPOTFY_LAG_GAP` ms apart, watches Liked Music, then likes them again oldest first so
     /// the order is as before.
-    /// `YTM_DATA_DIR=<profile> cargo test --release -- --ignored unlike_lag_live --nocapture`
+    /// `REDSPOTFY_DATA_DIR=<profile> cargo test --release -- --ignored unlike_lag_live --nocapture`
     #[tokio::test]
     #[ignore]
     async fn unlike_lag_live() {
         use std::time::{Duration, Instant};
-        let dir = std::path::PathBuf::from(std::env::var("YTM_DATA_DIR").unwrap());
+        let dir = std::path::PathBuf::from(std::env::var("REDSPOTFY_DATA_DIR").unwrap());
         let api = crate::ytmapi::Api::new(&dir);
         assert!(api.account().is_some(), "no session in the vault");
-        let n: usize = std::env::var("YTM_LAG_N").ok().and_then(|v| v.parse().ok()).unwrap_or(20);
-        let gap = Duration::from_millis(std::env::var("YTM_LAG_GAP").ok().and_then(|v| v.parse().ok()).unwrap_or(0));
+        let n: usize = std::env::var("REDSPOTFY_LAG_N").ok().and_then(|v| v.parse().ok()).unwrap_or(20);
+        let gap = Duration::from_millis(std::env::var("REDSPOTFY_LAG_GAP").ok().and_then(|v| v.parse().ok()).unwrap_or(0));
         async fn listed(api: &crate::ytmapi::Api) -> anyhow::Result<Vec<String>> {
             Ok(crate::ytm::playlist(api, "LM", true, None).await?.tracks.into_iter().map(|t| t.id).collect())
         }
-        // YTM_LAG_MODE=edit: one edit of the Liked Music playlist taking the entries out.
-        let edit = std::env::var("YTM_LAG_MODE").is_ok_and(|m| m == "edit");
+        // REDSPOTFY_LAG_MODE=edit: one edit of the Liked Music playlist taking the entries out.
+        let edit = std::env::var("REDSPOTFY_LAG_MODE").is_ok_and(|m| m == "edit");
         let lm = crate::ytm::playlist(&api, "LM", true, None).await.unwrap();
         let before: Vec<String> = lm.tracks.iter().map(|t| t.id.clone()).collect();
         let pick: Vec<String> = before.iter().take(n).cloned().collect();
@@ -1722,7 +1722,7 @@ mod live {
     #[tokio::test]
     #[ignore]
     async fn matching_live() {
-        let dir = directories::ProjectDirs::from("", "", "ytm-rs").unwrap().data_dir().to_path_buf();
+        let dir = directories::ProjectDirs::from("", "", "redspotfy").unwrap().data_dir().to_path_buf();
         let api = crate::ytmapi::Api::new(&dir);
         assert!(api.account().is_some(), "not signed in");
         let songs: &[(&str, &[&str])] = &[
@@ -1743,11 +1743,11 @@ mod live {
         assert_eq!(sure, songs.len());
     }
 
-    /// `YTM_DATA_DIR=<profile> cargo test --release -- --ignored liked_music_live --nocapture`
+    /// `REDSPOTFY_DATA_DIR=<profile> cargo test --release -- --ignored liked_music_live --nocapture`
     #[tokio::test]
     #[ignore]
     async fn liked_music_live() {
-        let dir = std::path::PathBuf::from(std::env::var("YTM_DATA_DIR").unwrap());
+        let dir = std::path::PathBuf::from(std::env::var("REDSPOTFY_DATA_DIR").unwrap());
         let api = crate::ytmapi::Api::new(&dir);
         assert!(api.account().is_some(), "no session in the vault");
         for limit in [100, 1000, 20_000] {

@@ -1,9 +1,9 @@
 {
   "id": "classic",
   "name": "Classic",
-  "creators": ["ytm-rs"],
+  "creators": ["redspotfy"],
   "blurb": "Plain dark with red accents and no album-art colours.",
-  "source": "ytm-rs",
+  "source": "redspotfy",
   "accent": "#ff3048",
   "background": { "mode": "accent_gradient", "solid": "#0c0a0e", "scrim": 0.3 },
   "lyrics": {

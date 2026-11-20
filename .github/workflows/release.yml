@@ -10,7 +10,7 @@ name: Release
 #
 # Nightly: at 11:47 PM Central, if main has changes to the app (its code, assets, build
 # or packaging) that no release or nightly was built from, the same
-# files are built from it as version <version>-nightly.<date> (YTM_NIGHTLY tells the app
+# files are built from it as version <version>-nightly.<date> (REDSPOTFY_NIGHTLY tells the app
 # it's a nightly) and published as a prerelease, tagged v<version>-nightly.<date>, with
 # the commits since the last release or nightly as its notes. The app's nightly channel
 # reads those; the latest release is never one of them. Only the newest few are kept.
@@ -107,7 +107,7 @@ jobs:
     name: windows (${{ matrix.name }})
     env:
       VERSION: ${{ needs.prepare.outputs.version }}
-      YTM_NIGHTLY: ${{ needs.prepare.outputs.nightly }}
+      REDSPOTFY_NIGHTLY: ${{ needs.prepare.outputs.nightly }}
     steps:
       - uses: actions/checkout@v5
 
@@ -123,8 +123,8 @@ jobs:
         shell: bash
         run: |
           cargo_ver=$(grep -m1 '^version' Cargo.toml | cut -d'"' -f2)
-          iss_ver=$(grep -m1 '#define AppVersion' installer/ytm-rs.iss | cut -d'"' -f2)
-          echo "Cargo.toml $cargo_ver, ytm-rs.iss $iss_ver"
+          iss_ver=$(grep -m1 '#define AppVersion' installer/redspotfy.iss | cut -d'"' -f2)
+          echo "Cargo.toml $cargo_ver, redspotfy.iss $iss_ver"
           [ "$cargo_ver" = "$iss_ver" ] || { echo "version mismatch"; exit 1; }
           if [ "$GITHUB_REF_TYPE" = tag ] && [ "$GITHUB_REF_NAME" != "v$cargo_ver" ]; then
             echo "tag $GITHUB_REF_NAME does not match v$cargo_ver"; exit 1
@@ -140,7 +140,7 @@ jobs:
 
       - name: Build installer
         run: |
-          & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" /Q ${{ matrix.iscc }} "/DAppVersion=$env:VERSION" installer\ytm-rs.iss
+          & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" /Q ${{ matrix.iscc }} "/DAppVersion=$env:VERSION" installer\redspotfy.iss
           if ($LASTEXITCODE) { exit 1 }
 
       # The portable zip: the exe, the marker that makes it portable, README and LICENSE.
@@ -148,16 +148,16 @@ jobs:
         run: |
           $out = "installer\Output\portable${{ matrix.suffix }}"
           New-Item -ItemType Directory -Force $out | Out-Null
-          Copy-Item "${{ matrix.bin }}\ytm-rs.exe", installer\portable.txt, README.md, LICENSE $out
-          & "$env:SystemRoot\System32\tar.exe" -a -c -f "installer\Output\ytm-rs-portable-$env:VERSION${{ matrix.suffix }}.zip" -C $out ytm-rs.exe portable.txt README.md LICENSE
+          Copy-Item "${{ matrix.bin }}\redspotfy.exe", installer\portable.txt, README.md, LICENSE $out
+          & "$env:SystemRoot\System32\tar.exe" -a -c -f "installer\Output\redspotfy-portable-$env:VERSION${{ matrix.suffix }}.zip" -C $out redspotfy.exe portable.txt README.md LICENSE
           if ($LASTEXITCODE) { exit 1 }
 
       - uses: actions/upload-artifact@v5
         with:
           name: windows-${{ matrix.name }}
           path: |
-            installer/Output/ytm-rs-setup-${{ env.VERSION }}${{ matrix.suffix }}.exe
-            installer/Output/ytm-rs-portable-${{ env.VERSION }}${{ matrix.suffix }}.zip
+            installer/Output/redspotfy-setup-${{ env.VERSION }}${{ matrix.suffix }}.exe
+            installer/Output/redspotfy-portable-${{ env.VERSION }}${{ matrix.suffix }}.zip
           if-no-files-found: error
 
   linux:
@@ -167,7 +167,7 @@ jobs:
     runs-on: ubuntu-22.04
     env:
       VERSION: ${{ needs.prepare.outputs.version }}
-      YTM_NIGHTLY: ${{ needs.prepare.outputs.nightly }}
+      REDSPOTFY_NIGHTLY: ${{ needs.prepare.outputs.nightly }}
     steps:
       - uses: actions/checkout@v5
 
@@ -188,31 +188,31 @@ jobs:
       # it portable, README and LICENSE. The updater on Linux reads them too.
       - name: Build tarballs
         run: |
-          dir="ytm-rs-$VERSION-linux-x86_64"
+          dir="redspotfy-$VERSION-linux-x86_64"
           mkdir -p "out/$dir"
-          cp target/release/ytm-rs linux/install.sh linux/ytm-rs.desktop README.md LICENSE "out/$dir/"
-          cp assets/icon/icon.png "out/$dir/ytm-rs.png"
-          chmod 755 "out/$dir/ytm-rs" "out/$dir/install.sh"
+          cp target/release/redspotfy linux/install.sh linux/redspotfy.desktop README.md LICENSE "out/$dir/"
+          cp assets/icon/icon.png "out/$dir/redspotfy.png"
+          chmod 755 "out/$dir/redspotfy" "out/$dir/install.sh"
           tar -czf "out/$dir.tar.gz" -C out "$dir"
-          dir="ytm-rs-portable-$VERSION-linux-x86_64"
+          dir="redspotfy-portable-$VERSION-linux-x86_64"
           mkdir -p "out/$dir"
-          cp target/release/ytm-rs linux/portable.txt README.md LICENSE "out/$dir/"
-          chmod 755 "out/$dir/ytm-rs"
+          cp target/release/redspotfy linux/portable.txt README.md LICENSE "out/$dir/"
+          chmod 755 "out/$dir/redspotfy"
           tar -czf "out/$dir.tar.gz" -C out "$dir"
 
-      # The .deb (ytm-rs_<version>_amd64.deb, a nightly's as <version>+nightly.<date>),
+      # The .deb (redspotfy_<version>_amd64.deb, a nightly's as <version>+nightly.<date>),
       # which installs over the last one. It tells you about new versions rather than
       # updating itself.
       - name: Build the .deb
-        run: sh linux/deb.sh target/release/ytm-rs "$VERSION" out
+        run: sh linux/deb.sh target/release/redspotfy "$VERSION" out
 
       - uses: actions/upload-artifact@v5
         with:
           name: linux
           path: |
-            out/ytm-rs-${{ env.VERSION }}-linux-x86_64.tar.gz
-            out/ytm-rs-portable-${{ env.VERSION }}-linux-x86_64.tar.gz
-            out/ytm-rs_*_amd64.deb
+            out/redspotfy-${{ env.VERSION }}-linux-x86_64.tar.gz
+            out/redspotfy-portable-${{ env.VERSION }}-linux-x86_64.tar.gz
+            out/redspotfy_*_amd64.deb
           if-no-files-found: error
 
   # Built on archlinux:latest, which moves under it: if this fails, the release and the
@@ -225,25 +225,25 @@ jobs:
     continue-on-error: true
     env:
       VERSION: ${{ needs.prepare.outputs.version }}
-      YTM_NIGHTLY: ${{ needs.prepare.outputs.nightly }}
+      REDSPOTFY_NIGHTLY: ${{ needs.prepare.outputs.nightly }}
     steps:
       - uses: actions/checkout@v5
 
       # Build against Arch's current libraries, rather than repackaging the
       # Ubuntu binary. makepkg produces a pacman-installable .pkg.tar.zst
-      # (ytm-rs-<version>-1-x86_64.pkg.tar.zst, a nightly's as <version>.nightly.<date>),
+      # (redspotfy-<version>-1-x86_64.pkg.tar.zst, a nightly's as <version>.nightly.<date>),
       # which tells you about new versions rather than updating itself.
       - name: Build the Arch package
         run: |
           docker run --rm \
             -v "$PWD:/src" -w /src \
-            -e YTM_NIGHTLY \
+            -e REDSPOTFY_NIGHTLY \
             archlinux:latest bash linux/arch.sh "$VERSION"
 
       - uses: actions/upload-artifact@v5
         with:
           name: arch
-          path: out/ytm-rs-*-x86_64.pkg.tar.zst
+          path: out/redspotfy-*-x86_64.pkg.tar.zst
           if-no-files-found: error
           compression-level: 0
 
@@ -260,7 +260,7 @@ jobs:
     env:
       MACOSX_DEPLOYMENT_TARGET: "11.0"
       VERSION: ${{ needs.prepare.outputs.version }}
-      YTM_NIGHTLY: ${{ needs.prepare.outputs.nightly }}
+      REDSPOTFY_NIGHTLY: ${{ needs.prepare.outputs.nightly }}
     steps:
       - uses: actions/checkout@v5
 
@@ -288,9 +288,9 @@ jobs:
         env:
           ARCH: ${{ matrix.arch }}
         run: |
-          bin="target/$ARCH-apple-darwin/release/ytm-rs"
+          bin="target/$ARCH-apple-darwin/release/redspotfy"
           stage="out/dmg-$ARCH"
-          dmg="out/ytm-rs-setup-$VERSION-macos-$ARCH.dmg"
+          dmg="out/redspotfy-setup-$VERSION-macos-$ARCH.dmg"
           mkdir -p "$stage"
           sh macos/bundle.sh "$bin" "$VERSION" "$stage"
           ln -s /Applications "$stage/Applications"
@@ -300,7 +300,7 @@ jobs:
             sleep 10
           done
           [ -f "$dmg" ]
-          dir="ytm-rs-portable-$VERSION-macos-$ARCH"
+          dir="redspotfy-portable-$VERSION-macos-$ARCH"
           mkdir -p "out/$dir"
           sh macos/bundle.sh "$bin" "$VERSION" "out/$dir" portable
           cp README.md LICENSE "out/$dir/"
@@ -310,8 +310,8 @@ jobs:
         with:
           name: macos-${{ matrix.arch }}
           path: |
-            out/ytm-rs-setup-${{ env.VERSION }}-macos-${{ matrix.arch }}.dmg
-            out/ytm-rs-portable-${{ env.VERSION }}-macos-${{ matrix.arch }}.zip
+            out/redspotfy-setup-${{ env.VERSION }}-macos-${{ matrix.arch }}.dmg
+            out/redspotfy-portable-${{ env.VERSION }}-macos-${{ matrix.arch }}.zip
           if-no-files-found: error
 
   # Waits for the Arch package, but goes ahead without it if it failed.
@@ -337,7 +337,7 @@ jobs:
             gh release upload "$GITHUB_REF_NAME" files/* --clobber
             gh release edit "$GITHUB_REF_NAME" --draft=false --latest
           else
-            gh release create "$GITHUB_REF_NAME" files/* --draft --title "ytm-rs ${GITHUB_REF_NAME#v}" --notes ""
+            gh release create "$GITHUB_REF_NAME" files/* --draft --title "redspotfy ${GITHUB_REF_NAME#v}" --notes ""
           fi
 
   nightly:
@@ -379,7 +379,7 @@ jobs:
             fi
           } > notes.md
           cat notes.md
-          gh release create "$tag" files/* --draft --prerelease --target "$GITHUB_SHA" --title "ytm-rs $VERSION" --notes-file notes.md
+          gh release create "$tag" files/* --draft --prerelease --target "$GITHUB_SHA" --title "redspotfy $VERSION" --notes-file notes.md
           gh release edit "$tag" --draft=false --prerelease
 
       # The newest few nightlies are plenty; delete the rest, tags too.

@@ -544,7 +544,7 @@ pub struct App {
     theme_id: String,
     /// Preset whose chrome (glass, corner radius) is installed in the egui style.
     chrome_applied: Option<String>,
-    /// Light or dark pages (the ytm-rs theme's; see `light_pages`).
+    /// Light or dark pages (the redspotfy theme's; see `light_pages`).
     appearance: theme::Appearance,
     /// The theme's accent colour, the system's or the listener's own.
     accent_source: AccentSource,
@@ -760,8 +760,8 @@ impl App {
         storage: Option<&dyn eframe::Storage>,
     ) -> Self {
         let get = |k: &str| storage.and_then(|s| s.get_string(k));
-        // Dev hook: YTM_FONT=<font name> tries a font without saving it.
-        theme::set_font_choice(&dev_var("YTM_FONT").map(str::to_owned).or_else(|| get("font")).unwrap_or_default());
+        // Dev hook: REDSPOTFY_FONT=<font name> tries a font without saving it.
+        theme::set_font_choice(&dev_var("REDSPOTFY_FONT").map(str::to_owned).or_else(|| get("font")).unwrap_or_default());
         let discord_enabled = get("discord_enabled").is_none_or(|v| v == "1");
         let remote_enabled = get("remote_enabled").is_some_and(|v| v == "1");
         let app_icon = crate::appicon::load(backend.data_dir());
@@ -892,7 +892,7 @@ impl App {
             log_volume: get("log_volume").is_none_or(|v| v == "1"),
             high_quality: get("high_quality").is_none_or(|v| v == "1"),
             play_songs: get("play_songs").is_none_or(|v| v == "1"),
-            show_video: dev_var("YTM_VIDEO").is_some() || get("show_video").is_some_and(|v| v == "1"),
+            show_video: dev_var("REDSPOTFY_VIDEO").is_some() || get("show_video").is_some_and(|v| v == "1"),
             video_quality: get("video_quality").and_then(|v| v.parse().ok()).filter(|h| VIDEO_QUALITIES.contains(h)).unwrap_or(720),
             video: None,
             video_frame: None,
@@ -901,7 +901,7 @@ impl App {
             video_content_at: 0.0,
             ambient_light: get("ambient_light").is_none_or(|v| v == "1"),
             glow: None,
-            animated_covers: std::env::var_os("YTM_CANVAS").is_some() || get("animated_covers").is_some_and(|v| v == "1"),
+            animated_covers: std::env::var_os("REDSPOTFY_CANVAS").is_some() || get("animated_covers").is_some_and(|v| v == "1"),
             cover_clip: None,
             clip_art: None,
             hide_search_videos: get("hide_search_videos").is_some_and(|v| v == "1"),
@@ -939,11 +939,11 @@ impl App {
             update_seen: get("update_seen"),
             notes_dialog: None,
             // First launch of a newer version than last time: show what changed.
-            // YTM_WHATS_NEW=1 shows the card for this version regardless.
+            // REDSPOTFY_WHATS_NEW=1 shows the card for this version regardless.
             whats_new: {
                 let current = crate::update::current_version();
                 let last = get("last_version");
-                (std::env::var_os("YTM_WHATS_NEW").is_some() || last.is_some_and(|v| crate::update::newer(&current, &v))).then_some(current)
+                (std::env::var_os("REDSPOTFY_WHATS_NEW").is_some() || last.is_some_and(|v| crate::update::newer(&current, &v))).then_some(current)
             },
             restart_for_update: false,
             proxy_saved: crate::proxy::active().clone(),
@@ -963,12 +963,12 @@ impl App {
             art_changed: -10.0,
             art_brightness: 0.0,
             accent: theme::RED,
-            // Dev hook: YTM_THEME=<preset id> tries a theme without saving it.
+            // Dev hook: REDSPOTFY_THEME=<preset id> tries a theme without saving it.
             // The old "Classic theme" switch is the Classic theme now.
-            theme_id: std::env::var("YTM_THEME").ok().or_else(|| get("default_theme").filter(|v| v == "1").map(|_| "classic".to_owned())).or_else(|| get("theme")).unwrap_or_else(|| crate::preset::DEFAULT_ID.to_owned()),
+            theme_id: std::env::var("REDSPOTFY_THEME").ok().or_else(|| get("default_theme").filter(|v| v == "1").map(|_| "classic".to_owned())).or_else(|| get("theme")).unwrap_or_else(|| crate::preset::DEFAULT_ID.to_owned()),
             chrome_applied: None,
-            // Dev hook: YTM_APPEARANCE=light|dark|system tries a mode without saving it.
-            appearance: theme::Appearance::from_key(&dev_var("YTM_APPEARANCE").map(str::to_owned).or_else(|| get("appearance")).unwrap_or_default()),
+            // Dev hook: REDSPOTFY_APPEARANCE=light|dark|system tries a mode without saving it.
+            appearance: theme::Appearance::from_key(&dev_var("REDSPOTFY_APPEARANCE").map(str::to_owned).or_else(|| get("appearance")).unwrap_or_default()),
             accent_source: AccentSource::from_key(&get("custom_accent").unwrap_or_default()),
             accent_controls: get("accent_controls").is_some_and(|v| v == "1"),
             custom_background_path: get("custom_background")
@@ -1028,7 +1028,7 @@ impl App {
             settings_query: String::new(),
             palette: Default::default(),
             // Dev hook: the full screen layout, leaving the window where it is.
-            fullscreen: dev_var("YTM_FAKE_FULLSCREEN").is_some(),
+            fullscreen: dev_var("REDSPOTFY_FAKE_FULLSCREEN").is_some(),
             video_full: false,
             mini: mini::Mini::load(get),
             lyrics: None,
@@ -1068,24 +1068,24 @@ impl App {
             app.page_loaded();
             app.page_changed = 0.0;
         }
-        // Dev hooks: YTM_SMOKE="query" searches and plays the first song ("id:<videoId>[,<videoId>…]"
-        // plays that video; with YTM_VIDEO, shown as a video); YTM_SEARCH
-        // only searches; YTM_PAGE opens a page; YTM_NOWPLAYING opens the overlay.
-        if let Some(s) = get(SESSION_KEY).filter(|_| std::env::var_os("YTM_SMOKE").is_none()) {
+        // Dev hooks: REDSPOTFY_SMOKE="query" searches and plays the first song ("id:<videoId>[,<videoId>…]"
+        // plays that video; with REDSPOTFY_VIDEO, shown as a video); REDSPOTFY_SEARCH
+        // only searches; REDSPOTFY_PAGE opens a page; REDSPOTFY_NOWPLAYING opens the overlay.
+        if let Some(s) = get(SESSION_KEY).filter(|_| std::env::var_os("REDSPOTFY_SMOKE").is_none()) {
             app.restore_session(&s);
         }
-        let smoke = std::env::var("YTM_SMOKE").ok().filter(|q| !q.is_empty());
+        let smoke = std::env::var("REDSPOTFY_SMOKE").ok().filter(|q| !q.is_empty());
         if let Some(ids) = smoke.as_deref().and_then(|q| q.strip_prefix("id:")) {
             // "id:a,b,c" queues several.
-            let track = |id: &str| Track { id: id.to_owned(), title: id.to_owned(), music_video: dev_var("YTM_VIDEO").is_some(), ..Default::default() };
+            let track = |id: &str| Track { id: id.to_owned(), title: id.to_owned(), music_video: dev_var("REDSPOTFY_VIDEO").is_some(), ..Default::default() };
             app.play_list(ids.split(',').map(track).collect(), 0);
         } else if let Some(q) = smoke {
             app.go(Page::Search(q.clone()));
             app.smoke = Some(q);
-        } else if let Some(q) = std::env::var("YTM_SEARCH").ok().filter(|q| !q.is_empty()) {
+        } else if let Some(q) = std::env::var("REDSPOTFY_SEARCH").ok().filter(|q| !q.is_empty()) {
             app.go(Page::Search(q));
         }
-        match std::env::var("YTM_PAGE").as_deref() {
+        match std::env::var("REDSPOTFY_PAGE").as_deref() {
             Ok("home") => app.go(Page::Home),
             Ok("explore") => app.go(Page::Explore),
             Ok("library") => app.go(Page::Library(LibTab::Playlists)),
@@ -1104,21 +1104,21 @@ impl App {
             Ok(p) if p.starts_with("search:") => app.go(Page::Search(p[7..].to_owned())),
             _ => {}
         }
-        // YTM_UPLOAD=<file>[|<file>…] uploads those files as if they had been picked together.
-        if let Some(f) = std::env::var("YTM_UPLOAD").ok().filter(|f| !f.is_empty()) {
+        // REDSPOTFY_UPLOAD=<file>[|<file>…] uploads those files as if they had been picked together.
+        if let Some(f) = std::env::var("REDSPOTFY_UPLOAD").ok().filter(|f| !f.is_empty()) {
             *app.picked_uploads.lock().unwrap() = Some(f.split('|').map(Into::into).collect());
         }
-        // Dev hook: YTM_PROXY_INPUT=<address> opens Settings › Network on Custom with it typed in.
-        if let Some(v) = dev_var("YTM_PROXY_INPUT") {
+        // Dev hook: REDSPOTFY_PROXY_INPUT=<address> opens Settings › Network on Custom with it typed in.
+        if let Some(v) = dev_var("REDSPOTFY_PROXY_INPUT") {
             app.settings_tab = pages::SettingsTab::General;
             app.proxy_mode = crate::proxy::Setting::Custom(String::new());
             app.proxy_url = v.to_owned();
         }
-        if std::env::var("YTM_NOWPLAYING").is_ok() {
+        if std::env::var("REDSPOTFY_NOWPLAYING").is_ok() {
             app.np_open = true;
         }
-        // Dev hook: YTM_NP_TAB=comments|upnext|art opens that panel.
-        match std::env::var("YTM_NP_TAB").as_deref() {
+        // Dev hook: REDSPOTFY_NP_TAB=comments|upnext|art opens that panel.
+        match std::env::var("REDSPOTFY_NP_TAB").as_deref() {
             Ok("comments") => app.np_tab = NpTab::Comments,
             Ok("upnext") => app.np_tab = NpTab::UpNext,
             Ok("art") => app.np_tab = NpTab::Art,
@@ -1142,8 +1142,8 @@ impl App {
         {
             app.home = Some(HomeState { chips: c.chips, shelves: c.shelves, continuation: None, loading_more: None, picks_loading: false, picks_expanded: false });
         }
-        // Dev hook: YTM_QUEUE opens the queue drawer.
-        if std::env::var_os("YTM_QUEUE").is_some() {
+        // Dev hook: REDSPOTFY_QUEUE opens the queue drawer.
+        if std::env::var_os("REDSPOTFY_QUEUE").is_some() {
             app.queue_open = true;
         }
         jam::dev_hooks(&mut app);
@@ -1544,12 +1544,12 @@ impl eframe::App for App {
         if self.page_changed < 0.0 {
             self.page_changed = now;
         }
-        // Dev hook: YTM_FAKE_FULLSCREEN=<secs> lays out as full screen from then on, without touching the window.
-        if let Some(t) = dev_var("YTM_FAKE_FULLSCREEN").and_then(|v| v.parse::<f64>().ok()) {
+        // Dev hook: REDSPOTFY_FAKE_FULLSCREEN=<secs> lays out as full screen from then on, without touching the window.
+        if let Some(t) = dev_var("REDSPOTFY_FAKE_FULLSCREEN").and_then(|v| v.parse::<f64>().ok()) {
             self.fullscreen = now >= t;
         }
-        // Dev hook: YTM_NP_TOGGLE_AT=<secs>[,<secs>…] clicks the Lyrics chip at those times.
-        if let Some(v) = dev_var("YTM_NP_TOGGLE_AT") {
+        // Dev hook: REDSPOTFY_NP_TOGGLE_AT=<secs>[,<secs>…] clicks the Lyrics chip at those times.
+        if let Some(v) = dev_var("REDSPOTFY_NP_TOGGLE_AT") {
             let times: Vec<f64> = v.split(',').filter_map(|t| t.parse().ok()).collect();
             let id = egui::Id::unique("dev-np-toggles");
             let done: usize = ctx.data(|d| d.get_temp(id)).unwrap_or(0);
@@ -1563,9 +1563,9 @@ impl eframe::App for App {
             }
         }
         fit_window_to_monitor(ctx);
-        // Dev hook: YTM_MINI=<secs>[,<secs>…] switches between the mini player and the
-        // full window at those times (YTM_MINI=1: the mini player after a second).
-        if let Some(v) = dev_var("YTM_MINI") {
+        // Dev hook: REDSPOTFY_MINI=<secs>[,<secs>…] switches between the mini player and the
+        // full window at those times (REDSPOTFY_MINI=1: the mini player after a second).
+        if let Some(v) = dev_var("REDSPOTFY_MINI") {
             let times: Vec<f64> = v.split(',').filter_map(|t| t.parse().ok()).collect();
             let id = egui::Id::unique("dev-mini");
             let done: usize = ctx.data(|d| d.get_temp(id)).unwrap_or(0);
@@ -1923,7 +1923,7 @@ impl eframe::App for App {
         // Back from the mini player.
         self.mini.fade_in(&ctx, now, shell::base_color(self));
 
-        if dev_var("YTM_THEME_TOUR").is_some() {
+        if dev_var("REDSPOTFY_THEME_TOUR").is_some() {
             self.theme_tour(&ctx, now);
         } else {
             dev_screenshot(&ctx, now);
@@ -1932,13 +1932,13 @@ impl eframe::App for App {
         theme::set_mode(&ctx, light);
     }
 
-    /// Dev hook: `YTM_FAKE_POINTER=x,y` parks a synthetic pointer there, for testing
+    /// Dev hook: `REDSPOTFY_FAKE_POINTER=x,y` parks a synthetic pointer there, for testing
     /// hover behaviour without touching the real mouse.
     fn raw_input_hook(&mut self, ctx: &egui::Context, raw: &mut egui::RawInput) {
         self.zoom = ctx.zoom_factor();
         dev::dev_script(ctx, raw);
-        // Dev hook: YTM_FAKE_WHEEL="secs,notches" injects one wheel event, for testing.
-        if let Some((at, n)) = dev_var("YTM_FAKE_WHEEL").and_then(|v| {
+        // Dev hook: REDSPOTFY_FAKE_WHEEL="secs,notches" injects one wheel event, for testing.
+        if let Some((at, n)) = dev_var("REDSPOTFY_FAKE_WHEEL").and_then(|v| {
             let (a, n) = v.split_once(',')?;
             Some((a.parse::<f64>().ok()?, n.parse::<f32>().ok()?))
         }) {
@@ -1957,8 +1957,8 @@ impl eframe::App for App {
                 ctx.request_repaint_after(Duration::from_millis(100));
             }
         }
-        // Dev hook: YTM_LOG_WHEEL=1 logs the wheel events the window sends.
-        if dev_var("YTM_LOG_WHEEL").is_some() {
+        // Dev hook: REDSPOTFY_LOG_WHEEL=1 logs the wheel events the window sends.
+        if dev_var("REDSPOTFY_LOG_WHEEL").is_some() {
             for e in raw.events.iter().filter(|e| matches!(e, egui::Event::MouseWheel { .. })) {
                 log::info!("wheel t={:.3} {e:?}", raw.time.unwrap_or(0.0));
             }
@@ -1968,7 +1968,7 @@ impl eframe::App for App {
             ctx.request_repaint();
         }
         frame_pace(raw, std::mem::take(&mut self.full_rate_frame));
-        if let Some((x, y)) = dev_var("YTM_FAKE_POINTER").and_then(|v| {
+        if let Some((x, y)) = dev_var("REDSPOTFY_FAKE_POINTER").and_then(|v| {
             let (x, y) = v.split_once(',')?;
             Some((x.trim().parse::<f32>().ok()?, y.trim().parse::<f32>().ok()?))
         }) {
@@ -1987,7 +1987,7 @@ impl eframe::App for App {
         // Where eframe reads it back from, before it sizes the window: the saved size is
         // in points at this zoom. Everything else in egui's memory starts fresh.
         storage.set_string("egui", format!("(options:(zoom_factor:{:?}))", self.zoom));
-        if std::env::var_os("YTM_MUTE").is_none() {
+        if std::env::var_os("REDSPOTFY_MUTE").is_none() {
             storage.set_string("volume", self.audio.volume().to_string());
         }
         let repeat = match self.queue.repeat {
@@ -2049,7 +2049,7 @@ impl eframe::App for App {
         storage.set_string("start_page", start.to_owned());
         storage.set_string("sidebar_collapsed", b(self.sidebar_collapsed));
         // Pretend versions (dev hook) mustn't decide the real "what's new".
-        if std::env::var_os("YTM_UPDATE_AS").is_none() {
+        if std::env::var_os("REDSPOTFY_UPDATE_AS").is_none() {
             storage.set_string("last_version", crate::update::current_version());
         }
         if let Some(v) = &self.update_seen {
@@ -2059,14 +2059,14 @@ impl eframe::App for App {
         storage.set_string("discord", serde_json::to_string(&self.discord_prefs).unwrap_or_default());
         storage.set_string("remote_enabled", b(self.remote_enabled));
         storage.set_string("default_theme", b(false));
-        if dev_var("YTM_APPEARANCE").is_none() {
+        if dev_var("REDSPOTFY_APPEARANCE").is_none() {
             storage.set_string("appearance", self.appearance.key().to_owned());
             storage.set_string("custom_accent", self.accent_source.key());
         }
-        if std::env::var_os("YTM_THEME").is_none() {
+        if std::env::var_os("REDSPOTFY_THEME").is_none() {
             storage.set_string("theme", self.theme_id.clone());
         }
-        if dev_var("YTM_FONT").is_none() {
+        if dev_var("REDSPOTFY_FONT").is_none() {
             storage.set_string("font", theme::font_choice());
         }
         storage.set_string("accent_controls", b(self.accent_controls));
@@ -2097,12 +2097,12 @@ impl eframe::App for App {
         storage.set_string("quick_lyric_scroll", b(self.quick_lyric_scroll));
         storage.set_string("lyrics_full_rate", b(self.lyrics_full_rate));
         // Background test runs mustn't change the listener's sources or per-song picks.
-        if std::env::var_os("YTM_BACKGROUND").is_none() || std::env::var_os("YTM_SAVE_SESSION").is_some() {
+        if std::env::var_os("REDSPOTFY_BACKGROUND").is_none() || std::env::var_os("REDSPOTFY_SAVE_SESSION").is_some() {
             self.lyric_prefs.save(storage);
         }
         storage.set_string("np_art", b(self.np_tab == NpTab::Art));
         // Background test runs leave the user's real "last song" alone unless asked.
-        let test_run = std::env::var_os("YTM_BACKGROUND").is_some() && std::env::var_os("YTM_SAVE_SESSION").is_none();
+        let test_run = std::env::var_os("REDSPOTFY_BACKGROUND").is_some() && std::env::var_os("REDSPOTFY_SAVE_SESSION").is_none();
         if let Some(s) = self.session_json().filter(|_| !test_run) {
             storage.set_string(SESSION_KEY, s);
         }
@@ -2232,14 +2232,14 @@ fn fit_window_to_monitor(ctx: &egui::Context) {
     if ctx.data(|d| d.get_temp::<bool>(done).unwrap_or(false)) {
         return;
     }
-    if std::env::var_os("YTM_BACKGROUND").is_some() {
+    if std::env::var_os("REDSPOTFY_BACKGROUND").is_some() {
         // eframe re-applies the saved (often maximized) window state regardless of the
         // builder, so push the test window off-screen here, before it's ever shown.
         ctx.data_mut(|d| d.insert_temp(done, true));
         ctx.send_viewport_cmd(egui::ViewportCommand::Maximized(false));
         ctx.send_viewport_cmd(egui::ViewportCommand::OuterPosition(egui::pos2(-4000.0, 0.0)));
-        // YTM_SIZE=WxH tests other window sizes (e.g. the narrow layout).
-        let size = std::env::var("YTM_SIZE").ok().and_then(|v| {
+        // REDSPOTFY_SIZE=WxH tests other window sizes (e.g. the narrow layout).
+        let size = std::env::var("REDSPOTFY_SIZE").ok().and_then(|v| {
             let (w, h) = v.split_once('x')?;
             Some(egui::vec2(w.parse().ok()?, h.parse().ok()?))
         });

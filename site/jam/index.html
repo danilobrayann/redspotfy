@@ -97,11 +97,11 @@
     li.textContent = ch;
     list.appendChild(li);
   });
-  var app = 'ytm-rs://jam/' + code;
+  var app = 'redspotfy://jam/' + code;
   var open = document.getElementById('open');
   open.href = app;
   open.addEventListener('click', function (e) { e.preventDefault(); location.href = app; });
-  // the app scheme is still ytm-rs:// until the binary rename lands; elsewhere an unknown scheme only shows an error.
+  // the app scheme is still redspotfy:// until the binary rename lands; elsewhere an unknown scheme only shows an error.
   if (/Windows/i.test(navigator.userAgent)) location.href = app;
 })();
 </script>

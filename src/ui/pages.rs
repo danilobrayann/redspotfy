@@ -38,8 +38,8 @@ pub fn page(app: &mut App, ui: &mut Ui, now: f64) {
     let mut area = egui::ScrollArea::vertical().id_salt(("page", &page)).auto_shrink(false);
     // At the window's right edge: clear of where it resizes the window.
     ui.spacing_mut().scroll.bar_outer_margin += super::titlebar::edge_inset();
-    // Dev hook: YTM_SCROLL=<px> pins the page scroll, for screenshots of lower sections.
-    if let Some(y) = super::dev_var("YTM_SCROLL").and_then(|v| v.parse::<f32>().ok()) {
+    // Dev hook: REDSPOTFY_SCROLL=<px> pins the page scroll, for screenshots of lower sections.
+    if let Some(y) = super::dev_var("REDSPOTFY_SCROLL").and_then(|v| v.parse::<f32>().ok()) {
         area = area.vertical_scroll_offset(y);
     }
     // Its list of categories stays put while one scrolls.
@@ -1157,7 +1157,7 @@ fn scope_tabs(app: &mut App, ui: &mut Ui, q: &str) {
     ui.add_space(6.0);
     ui.horizontal(|ui| {
         ui.spacing_mut().item_spacing.x = 10.0;
-        for (scope, label) in [(Scope::Everywhere, "ytm-rs"), (Scope::Library, "Library"), (Scope::Uploads, "Uploads")] {
+        for (scope, label) in [(Scope::Everywhere, "redspotfy"), (Scope::Library, "Library"), (Scope::Uploads, "Uploads")] {
             if chip(ui, label, scope == shown).clicked() {
                 picked = Some(scope);
             }
@@ -2298,8 +2298,8 @@ fn settings(app: &mut App, ui: &mut Ui) {
         Rect::from_min_max(pos2(full.left() + 16.0, head.min_rect().bottom()), full.max)
     };
     let mut area = egui::ScrollArea::vertical().id_salt(("settings", if filtering() { None } else { Some(app.settings_tab.label()) })).auto_shrink(false);
-    // Dev hook: YTM_SCROLL=<px> pins the page scroll, for screenshots of lower sections.
-    if let Some(y) = super::dev_var("YTM_SCROLL").and_then(|v| v.parse::<f32>().ok()) {
+    // Dev hook: REDSPOTFY_SCROLL=<px> pins the page scroll, for screenshots of lower sections.
+    if let Some(y) = super::dev_var("REDSPOTFY_SCROLL").and_then(|v| v.parse::<f32>().ok()) {
         area = area.vertical_scroll_offset(y);
     }
     let mut column = ui.new_child(egui::UiBuilder::new().max_rect(body).layout(top_down));
@@ -3152,7 +3152,7 @@ fn settings_window(app: &mut App, ui: &mut Ui) {
             use super::titlebar::Choice;
             let dir = app.backend.data_dir().to_owned();
             let saved = Choice::load(&dir);
-            setting_row(ui, "Title bar", Some("Who draws the window's title bar and buttons. Automatic uses ytm-rs's where the desktop draws none (GNOME on Wayland)."), |ui| {
+            setting_row(ui, "Title bar", Some("Who draws the window's title bar and buttons. Automatic uses redspotfy's where the desktop draws none (GNOME on Wayland)."), |ui| {
                 let btn = dropdown_button(ui, saved.label(), 120.0, "Title bar");
                 widgets::menu_popup(&btn).show(|ui| {
                     widgets::menu_body(ui, 120.0);
@@ -3167,7 +3167,7 @@ fn settings_window(app: &mut App, ui: &mut Ui) {
                 });
             });
             divider(ui);
-            if saved.own_here() != super::titlebar::custom() && std::env::var_os("YTM_NATIVE_TITLEBAR").is_none() {
+            if saved.own_here() != super::titlebar::custom() && std::env::var_os("REDSPOTFY_NATIVE_TITLEBAR").is_none() {
                 let mut restart = false;
                 setting_row(ui, "Restart to apply", Some("The title bar changes from the next start."), |ui| {
                     restart = pill(ui, "Restart now", None, true).clicked();
@@ -3323,7 +3323,7 @@ fn settings_connections(app: &mut App, ui: &mut Ui) {
         let busy = app.lastfm_busy.load(Ordering::Relaxed);
         let desc = match &app.lastfm_user {
             Some(name) => format!("Scrobbling what you play to {name}'s profile."),
-            None if busy => "Allow ytm-rs on the Last.fm page that opened in your browser.".to_owned(),
+            None if busy => "Allow redspotfy on the Last.fm page that opened in your browser.".to_owned(),
             None => "Scrobble what you play to your Last.fm profile.".to_owned(),
         };
         let (mut connect, mut disconnect) = (false, false);
@@ -3392,7 +3392,7 @@ fn settings_updates(app: &mut App, ui: &mut Ui) {
                 Some(State::Checking) => "Checking for updates…".to_owned(),
                 Some(State::UpToDate) => format!("You're on the latest version ({}).", crate::update::current_version()),
                 Some(State::Downloading { version, percent }) => format!("Downloading {version}… {percent}%"),
-                Some(State::Ready { version, .. }) => format!("Version {version} is ready. It installs when you close ytm-rs."),
+                Some(State::Ready { version, .. }) => format!("Version {version} is ready. It installs when you close redspotfy."),
                 Some(State::Available { version, .. }) => format!("Version {version} is out. {}", crate::update::package_step()),
                 Some(State::Failed(e)) => format!("Couldn't check for updates: {e}"),
                 _ => format!("Version {}.", crate::update::current_version()),
@@ -3443,7 +3443,7 @@ fn settings_updates(app: &mut App, ui: &mut Ui) {
         // The other kind of Linux install, still there beside this one.
         if let Some((kind, cmd)) = crate::update::other_copy() {
             divider(ui);
-            setting_row(ui, "Another copy", Some(&format!("ytm-rs is also installed from {kind}. To remove that copy, run {cmd}")), |_| {});
+            setting_row(ui, "Another copy", Some(&format!("redspotfy is also installed from {kind}. To remove that copy, run {cmd}")), |_| {});
         }
         // Release notes for the version that's ready, else the one running.
         let (notes_v, ready) = match &state {
@@ -3567,7 +3567,7 @@ fn network(app: &mut App, ui: &mut Ui) {
     use crate::proxy::{self, Setting};
     let same = |a: &Setting, b: &Setting| std::mem::discriminant(a) == std::mem::discriminant(b);
     let mut pick = None;
-    setting_row(ui, "Proxy", Some("Send everything ytm-rs fetches through a proxy: songs, lyrics, sign-in and Listen together."), |ui| {
+    setting_row(ui, "Proxy", Some("Send everything redspotfy fetches through a proxy: songs, lyrics, sign-in and Listen together."), |ui| {
         let btn = dropdown_button(ui, app.proxy_mode.label(), 220.0, "Proxy");
         widgets::menu_popup(&btn).show(|ui| {
             widgets::menu_body(ui, 220.0);
@@ -3603,9 +3603,9 @@ fn network(app: &mut App, ui: &mut Ui) {
                 None => {
                     let desc = match (proxy::system(), cfg!(windows)) {
                         (Some(p), true) => format!("Windows is set to use {}.", proxy::redact(&p)),
-                        (None, true) => "Windows isn't set to use a proxy, so ytm-rs connects directly.".to_owned(),
+                        (None, true) => "Windows isn't set to use a proxy, so redspotfy connects directly.".to_owned(),
                         (Some(p), false) => format!("The environment sets {}.", proxy::redact(&p)),
-                        (None, false) => "No HTTPS_PROXY or ALL_PROXY is set, so ytm-rs connects directly.".to_owned(),
+                        (None, false) => "No HTTPS_PROXY or ALL_PROXY is set, so redspotfy connects directly.".to_owned(),
                     };
                     ui.data_mut(|d| d.insert_temp(id, (now, desc.clone())));
                     desc
@@ -3890,7 +3890,7 @@ fn settings_equalizer(app: &mut App, ui: &mut Ui) {
 fn settings_tempo(app: &mut App, ui: &mut Ui) {
     let jam = app.jam.active();
     settings_section(ui, "Playback speed", None, jam.then_some(TEMPO_IN_JAM), |ui| {
-        setting_row(ui, "Playback speed", Some("Play songs faster or slower, also from a button in the player bar. Faster sounds higher and slower lower, like a record. Lyrics stay in time. Back to 1× each time ytm-rs starts."), |ui| {
+        setting_row(ui, "Playback speed", Some("Play songs faster or slower, also from a button in the player bar. Faster sounds higher and slower lower, like a record. Lyrics stay in time. Back to 1× each time redspotfy starts."), |ui| {
             toggle(ui, &mut app.tempo_on, "Playback speed");
         });
         ui.add_enabled_ui(app.tempo_on && !jam, |ui| {

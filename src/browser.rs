@@ -1,5 +1,5 @@
 //! Internal embedded browser window for Opera GX Store Hub and web stores.
-//! Runs in a dedicated child process (`ytm-rs --browser <url> <title>`)
+//! Runs in a dedicated child process (`redspotfy --browser <url> <title>`)
 //! to avoid event-loop conflicts between winit/eframe and tao/wry.
 
 use std::path::PathBuf;
@@ -29,7 +29,7 @@ pub fn open_store(url: &str, title: &str) {
 
 /// Child process entry point for `--browser <url> <title>`.
 pub fn child_main(url: &str, title: &str) {
-    let data_dir = directories::ProjectDirs::from("com", "grapedjuice", "ytm-rs")
+    let data_dir = directories::ProjectDirs::from("", "", "redspotfy")
         .map(|p| p.data_dir().to_path_buf())
         .unwrap_or_else(|| PathBuf::from("."));
     let profile_dir = data_dir.join("gx_browser_profile");

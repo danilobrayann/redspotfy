@@ -11,7 +11,7 @@ use egui::Color32;
 use serde::Deserialize;
 
 /// Id of the app's own look, used when a saved theme no longer exists.
-pub const DEFAULT_ID: &str = "ytm-rs";
+pub const DEFAULT_ID: &str = "redspotfy";
 
 // ------------------------------------------------------------------ background
 
@@ -2195,7 +2195,7 @@ mod tests {
     /// Every theme has a cover for its card in Settings.
     #[test]
     fn themes_have_covers() {
-        for p in all().iter().filter(|p| p.source != "ytm-rs") {
+        for p in all().iter().filter(|p| p.source != "redspotfy") {
             assert!(cover(&p.id).is_some(), "{} has no cover", p.id);
         }
     }

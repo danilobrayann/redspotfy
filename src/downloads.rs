@@ -52,12 +52,12 @@ struct State {
 static STATE: LazyLock<RwLock<State>> =
     LazyLock::new(|| RwLock::new(State { index: HashMap::new(), file: PathBuf::new(), folder: default_folder(), gone: HashSet::new(), saved: Vec::new() }));
 
-/// Music\ytm-rs.
+/// Music\redspotfy.
 pub fn default_folder() -> PathBuf {
     let base = directories::UserDirs::new()
         .and_then(|u| u.audio_dir().map(Path::to_path_buf).or_else(|| Some(u.home_dir().join("Music"))))
         .unwrap_or_else(|| PathBuf::from("."));
-    base.join("ytm-rs")
+    base.join("redspotfy")
 }
 
 /// Load the index; `folder` is the saved setting (empty for the default).
@@ -546,7 +546,7 @@ mod tests {
     /// Downloads takes on, in a folder of its own.
     #[test]
     fn saves_link_videos_and_are_taken_on() {
-        let dir = std::env::temp_dir().join(format!("ytm-rs-downloads-test-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("redspotfy-downloads-test-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(&dir).unwrap();
         init(&dir, &dir.join("music").display().to_string());

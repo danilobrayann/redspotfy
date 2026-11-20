@@ -1,4 +1,4 @@
-//! Dev hooks: test screenshots, the theme tour, frame pacing and `YTM_*` variables.
+//! Dev hooks: test screenshots, the theme tour, frame pacing and `REDSPOTFY_*` variables.
 
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
@@ -7,11 +7,11 @@ use std::time::Duration;
 use super::App;
 
 impl App {
-    /// Dev hook: `YTM_SKIP=<secs>` skips to the next song once a song has played that
+    /// Dev hook: `REDSPOTFY_SKIP=<secs>` skips to the next song once a song has played that
     /// long, and logs how many it has skipped: memory over many song changes (#107).
     pub(super) fn dev_skip(&mut self, ctx: &egui::Context, now: f64) {
         use std::sync::Mutex;
-        let Some(every) = dev_var("YTM_SKIP").and_then(|v| v.parse::<f64>().ok()) else { return };
+        let Some(every) = dev_var("REDSPOTFY_SKIP").and_then(|v| v.parse::<f64>().ok()) else { return };
         // When the current song started playing, and how many songs have been skipped.
         static STATE: Mutex<(Option<f64>, usize)> = Mutex::new((None, 0));
         ctx.request_repaint_after(Duration::from_millis(500));
@@ -28,14 +28,14 @@ impl App {
         }
     }
 
-    /// Dev hook: `YTM_THEME_TOUR=<secs>` steps through every theme preset from
-    /// `YTM_SCREENSHOT_AT`, saving `<YTM_SCREENSHOT stem>_<id>.png` for each, then exits.
+    /// Dev hook: `REDSPOTFY_THEME_TOUR=<secs>` steps through every theme preset from
+    /// `REDSPOTFY_SCREENSHOT_AT`, saving `<REDSPOTFY_SCREENSHOT stem>_<id>.png` for each, then exits.
     pub(super) fn theme_tour(&mut self, ctx: &egui::Context, now: f64) {
-        let Some(path) = dev_var("YTM_SCREENSHOT").map(std::path::PathBuf::from) else { return };
-        let at: f64 = dev_var("YTM_SCREENSHOT_AT").and_then(|v| v.parse().ok()).unwrap_or(8.0);
-        let step: f64 = dev_var("YTM_THEME_TOUR").and_then(|v| v.parse().ok()).unwrap_or(3.0);
-        // YTM_TOUR_ONLY=id,id limits the tour to those presets.
-        let only = dev_var("YTM_TOUR_ONLY").unwrap_or_default();
+        let Some(path) = dev_var("REDSPOTFY_SCREENSHOT").map(std::path::PathBuf::from) else { return };
+        let at: f64 = dev_var("REDSPOTFY_SCREENSHOT_AT").and_then(|v| v.parse().ok()).unwrap_or(8.0);
+        let step: f64 = dev_var("REDSPOTFY_THEME_TOUR").and_then(|v| v.parse().ok()).unwrap_or(3.0);
+        // REDSPOTFY_TOUR_ONLY=id,id limits the tour to those presets.
+        let only = dev_var("REDSPOTFY_TOUR_ONLY").unwrap_or_default();
         let all: Vec<&crate::preset::Preset> = crate::preset::all().iter().filter(|p| only.is_empty() || only.split(',').any(|o| o == p.id)).collect();
         ctx.request_repaint_after(Duration::from_millis(100));
         if now < at {
@@ -72,15 +72,15 @@ impl App {
     }
 }
 
-/// Dev hook: `YTM_SCREENSHOT=out.png` saves the app's own framebuffer after
-/// `YTM_SCREENSHOT_AT` seconds (default 8), independent of OS window capture.
-/// `YTM_SCREENSHOT_BURST=<n>` instead keeps the next n frames from `YTM_SCREENSHOT_AT`
+/// Dev hook: `REDSPOTFY_SCREENSHOT=out.png` saves the app's own framebuffer after
+/// `REDSPOTFY_SCREENSHOT_AT` seconds (default 8), independent of OS window capture.
+/// `REDSPOTFY_SCREENSHOT_BURST=<n>` instead keeps the next n frames from `REDSPOTFY_SCREENSHOT_AT`
 /// (in memory, so saving doesn't slow them) and then writes `<stem>_<i>_<ms>.png`,
 /// `ms` being each frame's time: a filmstrip of an animation and its frame pacing.
 pub(super) fn dev_screenshot(ctx: &egui::Context, now: f64) {
-    let Some(path) = dev_var("YTM_SCREENSHOT") else { return };
-    let at: f64 = dev_var("YTM_SCREENSHOT_AT").and_then(|v| v.parse().ok()).unwrap_or(8.0);
-    if let Some(n) = dev_var("YTM_SCREENSHOT_BURST").and_then(|v| v.parse::<usize>().ok()) {
+    let Some(path) = dev_var("REDSPOTFY_SCREENSHOT") else { return };
+    let at: f64 = dev_var("REDSPOTFY_SCREENSHOT_AT").and_then(|v| v.parse().ok()).unwrap_or(8.0);
+    if let Some(n) = dev_var("REDSPOTFY_SCREENSHOT_BURST").and_then(|v| v.parse::<usize>().ok()) {
         static FRAMES: std::sync::Mutex<Vec<(f64, Arc<egui::ColorImage>)>> = std::sync::Mutex::new(Vec::new());
         static REQUESTED: AtomicUsize = AtomicUsize::new(0);
         static DONE: AtomicBool = AtomicBool::new(false);
@@ -132,9 +132,9 @@ pub(super) fn dev_screenshot(ctx: &egui::Context, now: f64) {
     }
 }
 
-/// Dev hook: `YTM_SCRIPT="<secs>:<step>;…"` drives a test window that has no mouse or
+/// Dev hook: `REDSPOTFY_SCRIPT="<secs>:<step>;…"` drives a test window that has no mouse or
 /// keyboard, with seconds from the first frame. Steps: `m:x,y` moves the pointer, `c:x,y`
-/// clicks, `d:x,y` and `u:x,y` press and let go there (a drag, with moves between), `r:w,h` resizes, `t:text` types, `k:esc` presses Esc (`k:f` F, and so on), `w:n` scrolls n lines (down), `f:n` flicks a touchpad n pixels (down) over 0.1 s, as Wayland sends it, `s:name` saves `<YTM_SCRIPT_DIR>/name.png`, `q` quits.
+/// clicks, `d:x,y` and `u:x,y` press and let go there (a drag, with moves between), `r:w,h` resizes, `t:text` types, `k:esc` presses Esc (`k:f` F, and so on), `w:n` scrolls n lines (down), `f:n` flicks a touchpad n pixels (down) over 0.1 s, as Wayland sends it, `s:name` saves `<REDSPOTFY_SCRIPT_DIR>/name.png`, `q` quits.
 pub(super) fn dev_script(ctx: &egui::Context, raw: &mut egui::RawInput) {
     use std::sync::OnceLock;
     use std::time::Instant;
@@ -149,7 +149,7 @@ pub(super) fn dev_script(ctx: &egui::Context, raw: &mut egui::RawInput) {
         Shot(&'static str),
         Quit,
     }
-    let Some(script) = dev_var("YTM_SCRIPT") else { return };
+    let Some(script) = dev_var("REDSPOTFY_SCRIPT") else { return };
     static START: OnceLock<Instant> = OnceLock::new();
     static STEPS: OnceLock<Vec<(f64, Step)>> = OnceLock::new();
     static NEXT: AtomicUsize = AtomicUsize::new(0);
@@ -182,7 +182,7 @@ pub(super) fn dev_script(ctx: &egui::Context, raw: &mut egui::RawInput) {
                 }
                 ("s", _) => steps.push((at, Step::Shot(value))),
                 ("q", _) => steps.push((at, Step::Quit)),
-                _ => log::warn!("YTM_SCRIPT: can't read {step}"),
+                _ => log::warn!("REDSPOTFY_SCRIPT: can't read {step}"),
             }
         }
         steps.sort_by(|a, b| a.0.total_cmp(&b.0));
@@ -206,7 +206,7 @@ pub(super) fn dev_script(ctx: &egui::Context, raw: &mut egui::RawInput) {
                 }
             }
             Step::Shot(name) => {
-                let path = std::path::Path::new(dev_var("YTM_SCRIPT_DIR").unwrap_or(".")).join(format!("{name}.png"));
+                let path = std::path::Path::new(dev_var("REDSPOTFY_SCRIPT_DIR").unwrap_or(".")).join(format!("{name}.png"));
                 ctx.request_screenshot(move |img| {
                     let [w, h] = img.size;
                     let bytes: Vec<u8> = img.pixels.iter().flat_map(|c| c.to_array()).collect();
@@ -234,22 +234,22 @@ pub(super) fn dev_script(ctx: &egui::Context, raw: &mut egui::RawInput) {
     }
 }
 
-/// A `YTM_*` dev hook, read once: several are checked every frame.
+/// A `REDSPOTFY_*` dev hook, read once: several are checked every frame.
 pub(super) fn dev_var(name: &str) -> Option<&'static str> {
     static VARS: std::sync::OnceLock<std::collections::HashMap<String, String>> = std::sync::OnceLock::new();
     VARS.get_or_init(|| {
-        std::env::vars_os().filter_map(|(k, v)| Some((k.into_string().ok()?, v.into_string().ok()?))).filter(|(k, _)| k.starts_with("YTM_")).collect()
+        std::env::vars_os().filter_map(|(k, v)| Some((k.into_string().ok()?, v.into_string().ok()?))).filter(|(k, _)| k.starts_with("REDSPOTFY_")).collect()
     })
     .get(name)
     .map(String::as_str)
 }
 
-/// Dev hook: `YTM_PROBE=1` logs, each time the pointer stops somewhere new (`YTM_SCRIPT`'s
+/// Dev hook: `REDSPOTFY_PROBE=1` logs, each time the pointer stops somewhere new (`REDSPOTFY_SCRIPT`'s
 /// `m:x,y`), whether a press there would go to the title bar (move the window, maximize on
 /// a double-click), and how many widgets are under it.
 pub(super) fn dev_probe(ctx: &egui::Context) {
     use std::sync::Mutex;
-    if dev_var("YTM_PROBE").is_none() {
+    if dev_var("REDSPOTFY_PROBE").is_none() {
         return;
     }
     static LAST: Mutex<Option<egui::Pos2>> = Mutex::new(None);
@@ -267,13 +267,13 @@ pub(super) fn dev_probe(ctx: &egui::Context) {
     log::info!("probe {:.0},{:.0}: title bar {}, {} hovered, {under} under", p.x, p.y, if title { "yes" } else { "NO" }, hovered.len());
 }
 
-/// Dev hook: `YTM_MEM=<secs>` logs, that often, what the app's own caches hold: GPU
+/// Dev hook: `REDSPOTFY_MEM=<secs>` logs, that often, what the app's own caches hold: GPU
 /// textures (thumbnails and the rest), the font atlas, the image loaders' bytes and, on
 /// Linux, the process's resident memory. Elsewhere those come from outside (Task
 /// Manager, `Get-Process`).
 pub(super) fn dev_memory(ctx: &egui::Context, now: f64) {
     use std::sync::Mutex;
-    let Some(every) = dev_var("YTM_MEM").and_then(|v| v.parse::<f64>().ok()) else { return };
+    let Some(every) = dev_var("REDSPOTFY_MEM").and_then(|v| v.parse::<f64>().ok()) else { return };
     static LAST: Mutex<f64> = Mutex::new(f64::NEG_INFINITY);
     {
         let mut last = LAST.lock().unwrap();
@@ -312,7 +312,7 @@ pub(super) fn dev_memory(ctx: &egui::Context, now: f64) {
 }
 
 /// The process's resident memory as Linux counts it (`; VmRSS … RssAnon … RssFile …`), so
-/// the `YTM_MEM` line alone shows whether it's growing; empty elsewhere.
+/// the `REDSPOTFY_MEM` line alone shows whether it's growing; empty elsewhere.
 fn process_memory() -> String {
     let status = if cfg!(target_os = "linux") { std::fs::read_to_string("/proc/self/status").unwrap_or_default() } else { String::new() };
     let fields: Vec<String> = status

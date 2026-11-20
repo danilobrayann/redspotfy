@@ -665,7 +665,7 @@ mod tests {
 
     #[test]
     fn stray_refusals_dont_pause_everything() {
-        let api = Api::new(&std::env::temp_dir().join("ytm-rs-pause-test"));
+        let api = Api::new(&std::env::temp_dir().join("redspotfy-pause-test"));
         for _ in 0..5 {
             api.refused("search");
         }

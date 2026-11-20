@@ -945,14 +945,14 @@ mod tests {
         assert_eq!(glow[GLOW_SIZE[0] - 1], [0.0, 0.0, 200.0]);
     }
 
-    /// `YTM_CLIP=<HLS URL> cargo test --release -- --ignored clip_timing_live --nocapture`:
+    /// `REDSPOTFY_CLIP=<HLS URL> cargo test --release -- --ignored clip_timing_live --nocapture`:
     /// a clip's frame times, fragment by fragment.
     #[tokio::test]
     #[ignore]
     async fn clip_timing_live() {
-        let url = std::env::var("YTM_CLIP").expect("YTM_CLIP");
+        let url = std::env::var("REDSPOTFY_CLIP").expect("REDSPOTFY_CLIP");
         let clip = crate::canvas::load(&reqwest::Client::new(), &url, 400).await.unwrap();
-        if let Ok(out) = std::env::var("YTM_CLIP_OUT") {
+        if let Ok(out) = std::env::var("REDSPOTFY_CLIP_OUT") {
             std::fs::write(out, clip.segments.concat()).unwrap();
         }
         let track = parse_track(find(&clip.init, &["moov"]).unwrap()).unwrap();
@@ -996,13 +996,13 @@ mod tests {
         println!("{} frames, pts {:.3}..{:.3}; step min {:.4} max {:.4}; big steps {:?}", pts.len(), pts[0], pts[pts.len() - 1], gaps.iter().cloned().fold(f64::MAX, f64::min), gaps.iter().cloned().fold(0.0, f64::max), big);
     }
 
-    /// `YTM_CLIP_FILE=<saved clip> YTM_CLIP_SIG=<out> cargo test --release -- --ignored clip_order_live --nocapture`:
+    /// `REDSPOTFY_CLIP_FILE=<saved clip> REDSPOTFY_CLIP_SIG=<out> cargo test --release -- --ignored clip_order_live --nocapture`:
     /// each frame the clip player would show, in order, as 16×16 averages of its light
     /// (one byte each), to match against ffmpeg's decode of the same file.
     #[test]
     #[ignore]
     fn clip_order_live() {
-        let file = std::fs::read(std::env::var("YTM_CLIP_FILE").unwrap()).unwrap();
+        let file = std::fs::read(std::env::var("REDSPOTFY_CLIP_FILE").unwrap()).unwrap();
         let track = parse_track(find(&file, &["moov"]).unwrap()).unwrap();
         let samples: Vec<(Vec<u8>, f64)> = parse_fragment(&file, &track).into_iter().map(|s| (annex_b(&file[s.at..s.at + s.size], track.nal_len), s.pts)).collect();
         let (times, _) = loop_times(&samples.iter().map(|s| s.1).collect::<Vec<_>>());
@@ -1038,7 +1038,7 @@ mod tests {
             sig(&yuv, &mut out);
             shown.push(t);
         }
-        std::fs::write(std::env::var("YTM_CLIP_SIG").unwrap(), &out).unwrap();
+        std::fs::write(std::env::var("REDSPOTFY_CLIP_SIG").unwrap(), &out).unwrap();
         let backwards = shown.windows(2).filter(|w| w[1] < w[0]).count();
         println!("{} samples in, {} frames out; times going backwards {backwards}; first {:?}", samples.len(), shown.len(), &shown[..shown.len().min(6)]);
     }
