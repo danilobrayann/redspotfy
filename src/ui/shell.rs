@@ -445,6 +445,85 @@ pub fn is_rail(app: &App) -> bool {
 }
 
 /// How collapsed the sidebar is, 0 (full) to 1 (icon rail), eased over the toggle.
+/// `t` is the eased progress 0..1.
+fn collapse_amount(app: &App) -> f32 {
+    if app.sidebar_collapsed { 1.0 } else { 0.0 }
+}
+
+/// Animated "RedSpotfy" text with colour wipe effects.
+/// Phase 1 (0-6s): solid colours fade in/out — green, blue, purple
+/// Phase 2 (6-11s): 5s pause with normal text
+/// Phase 3 (11-17s): directional wipes — right-to-left, left-to-right, bottom-to-top
+fn animated_redspotfy_text(ui: &mut Ui, _accent: Color32) {
+    let time = ui.ctx().input(|i| i.time) as f32;
+    let cycle = 17.0_f32;
+    let t = time % cycle;
+
+    let font = theme::bold(22.0);
+    let text = "RedSpotfy";
+    let galley = widgets::galley(ui, text, font, theme::text(), 200.0);
+    let size = galley.size();
+    let (rect, _) = ui.allocate_exact_size(size, Sense::hover());
+    let painter = ui.painter();
+
+    if t < 6.0 {
+        // Phase 1: solid colour fades
+        let phase_t = t / 2.0;
+        let color_idx = (phase_t as usize) % 3;
+        let local_t = phase_t - color_idx as f32;
+        let alpha = if local_t < 0.5 {
+            local_t / 0.5
+        } else if local_t < 1.5 {
+            1.0
+        } else {
+            (2.0 - local_t) / 0.5
+        }.clamp(0.0, 1.0);
+
+        let colors = [
+            Color32::from_rgb(34, 197, 94),   // green
+            Color32::from_rgb(59, 130, 246),  // blue
+            Color32::from_rgb(168, 85, 247),  // purple
+        ];
+        let c = theme::with_alpha(colors[color_idx], alpha);
+        painter.galley(rect.min, galley.clone(), c);
+    } else if t < 11.0 {
+        // Phase 2: pause
+        painter.galley(rect.min, galley.clone(), theme::text());
+    } else {
+        // Phase 3: directional wipes (11-17s = 6s, 2s each)
+        let wipe_t = (t - 11.0) / 2.0;
+        let wipe_idx = (wipe_t as usize) % 3;
+        let local_t = wipe_t - wipe_idx as f32;
+        let progress = local_t.clamp(0.0, 1.0);
+
+        let colors = [
+            Color32::from_rgb(239, 68, 68),   // red
+            Color32::from_rgb(250, 204, 21),  // yellow
+            Color32::from_rgb(147, 197, 253), // light blue
+        ];
+
+        // Draw clip rect based on direction
+        let clip_rect = match wipe_idx {
+            0 => { // right-to-left
+                let w = size.x * progress;
+                Rect::from_min_max(pos2(rect.right() - w, rect.top()), rect.max)
+            }
+            1 => { // left-to-right
+                let w = size.x * progress;
+                Rect::from_min_max(rect.min, pos2(rect.left() + w, rect.bottom()))
+            }
+            _ => { // bottom-to-top
+                let h = size.y * progress;
+                Rect::from_min_max(pos2(rect.left(), rect.bottom() - h), rect.max)
+            }
+        };
+
+        let clipped_painter = painter.with_clip_rect(clip_rect);
+        clipped_painter.galley(rect.min, galley.clone(), colors[wipe_idx]);
+    }
+
+    ui.ctx().request_repaint_after(std::time::Duration::from_millis(16));
+}
 pub fn sidebar_collapse(app: &App, ctx: &egui::Context) -> f32 {
     let t = ctx.animate_bool_with_time(egui::Id::unique("sidebar-collapse"), is_rail(app), 0.28 * theme::SPEED);
     // Ease in-out: starts and lands gently in both directions.
@@ -513,14 +592,7 @@ pub fn sidebar(app: &mut App, ui: &mut Ui) {
         ui.add_space(8.0);
         let logo = app.look().app.top_bar.clone();
         if logo.logo_text.is_empty() {
-            ui.horizontal(|ui| {
-                if let Some(img) = appicon::get(appicon::load(app.backend.data_dir())).rgba(32) {
-                    let texture = ui.ctx().load_texture("app-logo-32", egui::ColorImage::from_rgba_unmultiplied([img.width() as usize, img.height() as usize], img.as_raw()), egui::TextureOptions::LINEAR);
-                    let (r, _) = ui.allocate_exact_size(vec2(32.0, 32.0), Sense::hover());
-                    ui.painter().image(texture.id(), r, r, Color32::WHITE);
-                }
-                ui.label(egui::RichText::new("RedSpotfy").font(theme::bold(22.0)).color(theme::text()));
-            });
+            animated_redspotfy_text(ui, app.accent_color());
         } else {
             logo_name(ui, &logo, app.accent_color());
         }
