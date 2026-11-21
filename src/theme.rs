@@ -992,10 +992,17 @@ const LYRIC_FONTS: &[(&str, [&[u8]; 5])] = &[
         include_bytes!("../assets/fonts/InstrumentSans-Medium.ttf"),
         include_bytes!("../assets/fonts/InstrumentSans-Regular.ttf"),
     ]),
+    ("roboto", [
+        include_bytes!("../assets/fonts/Roboto-Regular.ttf"),
+        include_bytes!("../assets/fonts/Roboto-Bold.ttf"),
+        include_bytes!("../assets/fonts/Roboto-Black.ttf"),
+        include_bytes!("../assets/fonts/Roboto-Medium.ttf"),
+        include_bytes!("../assets/fonts/Roboto-Light.ttf"),
+    ]),
 ];
 
 /// The bundled faces, by the names the font setting shows and stores.
-pub const BUNDLED_FONTS: &[&str] = &["Inter", "DM Sans", "Figtree", "Google Sans Flex", "Instrument Sans"];
+pub const BUNDLED_FONTS: &[&str] = &["Inter", "DM Sans", "Figtree", "Google Sans Flex", "Instrument Sans", "Roboto"];
 
 /// The bundled font a preset font name refers to. Fonts that can't be bundled (SF Pro,
 /// Spotify's) map to the closest open one; unknown names to Inter.
@@ -1005,6 +1012,7 @@ fn lyric_key(name: &str) -> Option<&'static str> {
         "googlesansflex" | "googlesans" => "googlesansflex",
         "figtree" | "spotifymixuititle" | "spotifymix" | "circular" => "figtree",
         "switzer" | "instrumentsans" => "instrumentsans",
+        "roboto" => "roboto",
         _ => return None,
     })
 }

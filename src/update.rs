@@ -135,15 +135,24 @@ pub fn pacman() -> bool {
     *PACMAN.get_or_init(|| cfg!(target_os = "linux") && std::env::current_exe().ok().and_then(|e| Some(e.parent()?.join("pacman.txt").exists())).unwrap_or(false))
 }
 
-/// Whether a package manager owns this copy (the .deb or the Arch package): it only
-/// says a new version is out.
+/// Whether this copy runs inside Flatpak: Flatpak owns it, so it never replaces
+/// itself — a new version comes through `flatpak update`.
+pub fn flatpak() -> bool {
+    static FLATPAK: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
+    *FLATPAK.get_or_init(|| cfg!(target_os = "linux") && (std::env::var_os("FLATPAK_ID").is_some() || Path::new("/.flatpak-info").exists()))
+}
+
+/// Whether a package manager owns this copy (the .deb, the Arch package or Flatpak):
+/// it only says a new version is out.
 pub fn packaged() -> bool {
-    deb() || pacman()
+    deb() || pacman() || flatpak()
 }
 
 /// What to do with the new version, for a copy a package manager owns.
 pub fn package_step() -> &'static str {
-    if pacman() {
+    if flatpak() {
+        "Update through Flatpak: run flatpak update in a terminal."
+    } else if pacman() {
         "Download the new package and install it over this one with sudo pacman -U."
     } else {
         "Download the new .deb and open it to install it over this one."
