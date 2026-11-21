@@ -18,7 +18,7 @@ use serde::{Deserialize, Serialize};
 const CLIENT_ID: &str = "1521756469433991299";
 
 /// That application's name, unless the listener gives another.
-pub const APP_NAME: &str = "Youtube Music";
+pub const APP_NAME: &str = "RedSpotfy";
 
 /// redspotfy's icon, from its website: the example song's artwork in Settings' preview.
 pub const ICON: &str = "https://danilobrayann.github.io/redspotfy/icon-192.png";
@@ -133,7 +133,7 @@ impl Page {
     fn button(self) -> &'static str {
         match self {
             Self::None => "",
-            Self::Song => "Listen on YouTube Music",
+            Self::Song => "Listen on RedSpotfy",
             Self::Artist => "View artist",
             Self::Album => "View album",
             Self::Jam => "Listen together",
@@ -522,7 +522,7 @@ mod tests {
         assert_eq!(c.lines[1], Some(Line { text: "Imagine Dragons".into(), url: None }));
         assert_eq!(c.lines[2].as_ref().map(|l| l.text.as_str()), Some("Evolve"));
         assert_eq!(c.times, Some((1000, Some(200_000))));
-        assert_eq!(c.buttons, vec![("Listen on YouTube Music", SONG_URL.to_owned())]);
+        assert_eq!(c.buttons, vec![("Listen on RedSpotfy", SONG_URL.to_owned())]);
         assert_eq!(c.status_text(), "Believer");
         assert_eq!(c.member_text(), "Believer - Imagine Dragons");
         assert_eq!(c.name(), APP_NAME);
@@ -591,7 +591,7 @@ mod tests {
     #[test]
     fn button_goes_out_within_discords_limits() {
         let a = serde_json::to_value(activity(&Card::new(&song(), &Prefs::default()))).unwrap();
-        assert_eq!(a["buttons"], serde_json::json!([{ "label": "Listen on YouTube Music", "url": SONG_URL }]));
+        assert_eq!(a["buttons"], serde_json::json!([{ "label": "Listen on RedSpotfy", "url": SONG_URL }]));
         for page in Page::ALL {
             assert!(page.button().chars().count() <= 32, "{page:?}");
         }
