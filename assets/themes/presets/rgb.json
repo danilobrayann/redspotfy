@@ -6,7 +6,7 @@
   ],
   "blurb": "A living prism: deep space base with a cover warped in full spectrum, lyrics sweeping through a rainbow band, and a hot magenta accent.",
   "source": "RedSpotfy",
-  "accent": "#ff2d95",
+  "accent": "#8b5cf6",
   "background": {
     "mode": "kawarp",
     "solid": "#07030f",
@@ -33,14 +33,10 @@
     ],
     "line_height": 1.4,
     "dim_alpha": 0.38,
-    "sung_color": "#22d3ee",
+    "sung_color": "accent",
     "sweep_band": [
-      "#ff2d95",
-      "#a855f7",
-      "#22d3ee",
-      "#4ade80",
-      "#facc15",
-      "#ff2d95"
+      "accent",
+      "accent"
     ],
     "sweep_band_width": 0.7,
     "opacity_transition": {
@@ -77,5 +73,6 @@
     "panel_radius": 16,
     "search_radius": 22,
     "text_dim": "#c9b8e8"
-  }
+  },
+  "cycle_secs": 5.0
 }

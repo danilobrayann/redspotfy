@@ -2045,6 +2045,10 @@ pub struct Preset {
     /// "cover" (sampled from the art), "system" (the Windows accent colour, else the
     /// cover's), or a fixed "#rrggbb".
     pub accent: String,
+    /// Seconds for the accent's hue to go full circle (0: a fixed colour). Everything
+    /// drawn in the accent — progress, buttons, sliders, sung lyrics — flows through it.
+    #[serde(default)]
+    pub cycle_secs: f32,
     pub lyrics: LyricStyle,
     pub cover: CoverStyle,
     pub now_playing: NowPlayingStyle,
@@ -2062,6 +2066,7 @@ impl Default for Preset {
             source: String::new(),
             background: Background::default(),
             accent: "#ff0033".into(),
+            cycle_secs: 0.0,
             lyrics: LyricStyle::default(),
             cover: CoverStyle::default(),
             now_playing: NowPlayingStyle::default(),
@@ -2113,6 +2118,43 @@ pub fn hex(s: &str) -> Option<Color32> {
     }
     let v = u32::from_str_radix(s, 16).ok()?;
     Some(Color32::from_rgb((v >> 16) as u8, (v >> 8) as u8, v as u8))
+}
+
+/// `c` with its hue turned `deg` degrees around the wheel, saturation and lightness kept.
+pub fn hue_rotate(c: Color32, deg: f32) -> Color32 {
+    let (r, g, b) = (c.r() as f32 / 255.0, c.g() as f32 / 255.0, c.b() as f32 / 255.0);
+    let max = r.max(g).max(b);
+    let min = r.min(g).min(b);
+    let d = max - min;
+    if d < 1e-4 {
+        return c; // grey: no hue to turn
+    }
+    let l = (max + min) / 2.0;
+    let s = if l > 0.5 { d / (2.0 - max - min) } else { d / (max + min) };
+    let mut h = if max == r {
+        (g - b) / d + if g < b { 6.0 } else { 0.0 }
+    } else if max == g {
+        (b - r) / d + 2.0
+    } else {
+        (r - g) / d + 4.0
+    };
+    h = (h * 60.0 + deg).rem_euclid(360.0);
+    let hp = h / 60.0;
+    let q = if l < 0.5 { l * (1.0 + s) } else { l + s - l * s };
+    let p = 2.0 * l - q;
+    let f = |t: f32| {
+        let t = t.rem_euclid(6.0);
+        if t < 1.0 { p + (q - p) * t } else if t < 3.0 { q } else if t < 4.0 { p + (q - p) * (4.0 - t) } else { p }
+    };
+    let (r, g, b) = (f(hp + 2.0), f(hp), f(hp - 2.0));
+    Color32::from_rgb((r * 255.0).round() as u8, (g * 255.0).round() as u8, (b * 255.0).round() as u8)
+}
+
+/// Where the accent's hue is on its cycle right now: `cycle_secs` per full turn.
+pub fn cycle_deg(cycle_secs: f32) -> f32 {
+    static EPOCH: std::sync::OnceLock<std::time::Instant> = std::sync::OnceLock::new();
+    let t = EPOCH.get_or_init(std::time::Instant::now).elapsed().as_secs_f32();
+    (t / cycle_secs.max(0.1) * 360.0) % 360.0
 }
 
 const FILES: &[(&str, &str)] = include!(concat!(env!("OUT_DIR"), "/theme_presets.rs"));

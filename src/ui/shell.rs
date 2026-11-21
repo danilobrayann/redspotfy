@@ -1578,7 +1578,12 @@ pub fn player_bar(app: &mut App, ui: &mut Ui, now: f64) {
         if ar.clicked() {
             app.actions.push(Action::OpenNowPlaying(!np_open));
         }
-        let tr = widgets::title_at(ui, pos2(x, cy - 19.0), &t.title, t.explicit, theme::weighted(chrome.bar_title_weight, chrome.bar_title_px), theme::text(), w);
+        // A cycling theme lends its accent to the song's own words too.
+        let cycling = app.look().cycle_secs > 0.0;
+        let accent_now = app.accent_color();
+        let title_c = if cycling { theme::lerp_color(theme::text(), accent_now, 0.6) } else { theme::text() };
+        let byline_c = if cycling { theme::lerp_color(theme::text_dim(), accent_now, 0.55) } else { theme::text_dim() };
+        let tr = widgets::title_at(ui, pos2(x, cy - 19.0), &t.title, t.explicit, theme::weighted(chrome.bar_title_weight, chrome.bar_title_px), title_c, w);
         let tresp = ui.interact(tr, ui.scope_id().with("np-title"), Sense::click());
         menu_on.push(tresp.clone());
         if named(tresp, &widgets::song_name(&t.title, t.explicit)).on_hover_cursor(egui::CursorIcon::PointingHand).clicked() {
@@ -1587,7 +1592,7 @@ pub fn player_bar(app: &mut App, ui: &mut Ui, now: f64) {
         let mut ax = x;
         // A byline too long for its room scrolls while hovered, and still opens the artist.
         let byline_font = theme::regular(chrome.bar_byline_px);
-        let byline_color = theme::with_alpha(theme::text_dim(), chrome.bar_byline_alpha);
+        let byline_color = theme::with_alpha(byline_c, chrome.bar_byline_alpha);
         let byline_area = Rect::from_min_size(pos2(x, cy + 2.0), vec2(w, chrome.bar_byline_px + 4.0));
         let on_song = ui.rect_contains_pointer(song_area);
         let long = if chrome.byline_marquee && ui.rect_contains_pointer(byline_area) {
@@ -1622,7 +1627,7 @@ pub fn player_bar(app: &mut App, ui: &mut Ui, now: f64) {
         } else {
             for (i, a) in t.artists.iter().enumerate() {
                 let s = if i + 1 < t.artists.len() { format!("{}, ", a.name) } else { a.name.clone() };
-                let r = text_at(ui, pos2(ax, cy + 2.0), &s, theme::regular(chrome.bar_byline_px), theme::with_alpha(theme::text_dim(), chrome.bar_byline_alpha), (x + w - ax).max(10.0));
+                let r = text_at(ui, pos2(ax, cy + 2.0), &s, theme::regular(chrome.bar_byline_px), theme::with_alpha(byline_c, chrome.bar_byline_alpha), (x + w - ax).max(10.0));
                 if let Some(id) = &a.id {
                     let resp = ui.interact(r, ui.scope_id().with(("artist", i)), Sense::click());
                     let resp = named(resp, &a.name).on_hover_cursor(egui::CursorIcon::PointingHand);

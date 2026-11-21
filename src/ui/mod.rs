@@ -1349,6 +1349,12 @@ impl App {
 
     fn accent_color(&self) -> Color32 {
         let c = self.base_accent();
+        // A cycling theme turns the accent's hue; everything drawn in it follows.
+        let c = if self.accent_source == AccentSource::Theme && self.look().cycle_secs > 0.0 {
+            crate::preset::hue_rotate(c, crate::preset::cycle_deg(self.look().cycle_secs))
+        } else {
+            c
+        };
         // A pale cover colour would barely show on light pages: deepen it.
         if theme::light() { theme::deepen(c, theme::bg(), 3.0) } else { c }
     }
@@ -1462,6 +1468,10 @@ impl eframe::App for App {
         self.lyric_view.release_hidden(ctx.cumulative_pass_nr());
         let now = ctx.input(|i| i.time);
         self.sync_look();
+        // A cycling theme keeps repainting so the accent's hue keeps turning.
+        if self.accent_source == AccentSource::Theme && self.look().cycle_secs > 0.0 {
+            ctx.request_repaint_after(Duration::from_millis(50));
+        }
         let picked_background = self.picked_background.lock().unwrap_or_else(|e| e.into_inner()).take();
         if let Some(result) = picked_background {
             match result {

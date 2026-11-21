@@ -32,6 +32,8 @@ pub static ALL: &[Variant] = &[
     variant!("happy", "Feliz 😊"),
     variant!("sad", "Triste 😢"),
     variant!("natal", "Natal 🎅"),
+    variant!("neve", "Neve ❄️"),
+    variant!("fones", "Fones 🎧"),
     variant!("gold", "Dourado"),
     variant!("neon", "Neon Cyber"),
     variant!("dark", "Dark Silver"),
