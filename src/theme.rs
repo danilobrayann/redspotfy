@@ -37,21 +37,35 @@ pub fn set_mode(ctx: &egui::Context, light: bool) -> bool {
     was
 }
 
+/// The cycling accent's current colour, when the active theme rotates its hue.
+/// Everything tinted toward it — text included — flows through the same colour.
+pub fn cycle_accent() -> Option<Color32> {
+    let p = crate::preset::active();
+    if p.cycle_secs <= 0.0 {
+        return None;
+    }
+    let base = p.accent(Color32::WHITE);
+    Some(crate::preset::hue_rotate(base, crate::preset::cycle_deg(p.cycle_secs)))
+}
+
 /// Main text.
 pub fn text() -> Color32 {
     if let Some(c) = filed(F_TEXT) {
         return c;
     }
-    if light() {
-        return TEXT_LIGHT;
-    }
-    match TEXT_OVER.load(std::sync::atomic::Ordering::Relaxed) {
-        0 => TEXT,
-        v => {
-            let [r, g, b, a] = v.to_le_bytes();
-            Color32::from_rgba_premultiplied(r, g, b, a)
+    let base = if light() {
+        TEXT_LIGHT
+    } else {
+        match TEXT_OVER.load(std::sync::atomic::Ordering::Relaxed) {
+            0 => TEXT,
+            v => {
+                let [r, g, b, a] = v.to_le_bytes();
+                Color32::from_rgba_premultiplied(r, g, b, a)
+            }
         }
-    }
+    };
+    // A cycling theme lends its hue to the words too — a whisper, not a repaint.
+    cycle_accent().map_or(base, |c| lerp_color(base, c, 0.22))
 }
 
 /// The theme's main text colour, when it has one (0: none), and its small fades against the usual.
@@ -79,7 +93,8 @@ pub fn on_text() -> Color32 {
 
 /// Least important text: counts, hints, placeholders.
 pub fn text_faint() -> Color32 {
-    filed(F_TEXT_FAINT).unwrap_or(if light() { TEXT_FAINT_LIGHT } else { TEXT_FAINT })
+    let base = filed(F_TEXT_FAINT).unwrap_or(if light() { TEXT_FAINT_LIGHT } else { TEXT_FAINT });
+    cycle_accent().map_or(base, |c| lerp_color(base, c, 0.15))
 }
 
 /// The window's base colour, under the background.
@@ -409,11 +424,13 @@ pub fn text_dim() -> Color32 {
     if let Some(c) = filed(F_TEXT_DIM) {
         return c;
     }
-    if light() {
-        return TEXT_DIM_LIGHT;
-    }
-    let [r, g, b, a] = DIM.load(std::sync::atomic::Ordering::Relaxed).to_le_bytes();
-    Color32::from_rgba_premultiplied(r, g, b, a)
+    let base = if light() {
+        TEXT_DIM_LIGHT
+    } else {
+        let [r, g, b, a] = DIM.load(std::sync::atomic::Ordering::Relaxed).to_le_bytes();
+        Color32::from_rgba_premultiplied(r, g, b, a)
+    };
+    cycle_accent().map_or(base, |c| lerp_color(base, c, 0.28))
 }
 
 /// Light, dark, or whichever the system uses (Settings › Appearance › Mode).

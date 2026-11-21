@@ -74,5 +74,5 @@
     "search_radius": 22,
     "text_dim": "#c9b8e8"
   },
-  "cycle_secs": 12.0
+  "cycle_secs": 30.0
 }
