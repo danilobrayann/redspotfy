@@ -3551,18 +3551,18 @@ fn settings_about(ui: &mut Ui) {
 
 /// Settings › Apoiar: Pix QR codes that keep RedSpotfy updated.
 fn settings_support(ui: &mut Ui) {
-    settings_section(ui, "Apoiar o RedSpotfy", None, Some("RedSpotfy is free and built by one person. Any amount helps keep the project updated — new themes, features and fixes — and grows our support network. Pick a key, scan the QR with your bank app, and send whatever feels right."), |ui| {
-        const KEYS: &[(&str, &str, &[u8])] = &[
-            ("E-mail", "danilo.inter@hotmail.com", include_bytes!("../../assets/pix/email1.png")),
-            ("Telefone", "71996738280", include_bytes!("../../assets/pix/phone.png")),
-            ("E-mail", "danilobrayann@gmail.com", include_bytes!("../../assets/pix/email2.png")),
-            ("CPF", "077.636.505.32", include_bytes!("../../assets/pix/cpf.png")),
+    settings_section(ui, "Apoiar o RedSpotfy", None, None, |ui| {
+        const KEYS: &[(&str, &[u8])] = &[
+            ("danilo.inter@hotmail.com", include_bytes!("../../assets/pix/email1.png")),
+            ("71996738280", include_bytes!("../../assets/pix/phone.png")),
+            ("danilobrayann@gmail.com", include_bytes!("../../assets/pix/email2.png")),
+            ("077.636.505.32", include_bytes!("../../assets/pix/cpf.png")),
         ];
-        ui.horizontal_wrapped(|ui| {
-            for (kind, key, png) in KEYS {
-                ui.vertical(|ui| {
-                    let size = vec2(148.0, 148.0);
-                    let (rect, _) = ui.allocate_exact_size(size, Sense::hover());
+        let size = vec2(180.0, 180.0);
+        for row in KEYS.chunks(2) {
+            ui.horizontal(|ui| {
+                for (key, png) in row {
+                    let (rect, resp) = ui.allocate_exact_size(size, Sense::click());
                     let img = image::load_from_memory(png).ok().map(|i| i.to_rgba8());
                     if let Some(img) = img {
                         let (w, h) = (img.width() as usize, img.height() as usize);
@@ -3572,18 +3572,14 @@ fn settings_support(ui: &mut Ui) {
                     } else {
                         ui.painter().rect_filled(rect, 8.0, theme::glass(0.08));
                     }
-                    ui.label(egui::RichText::new(*kind).font(theme::semibold(12.5)).color(theme::text()));
-                    let key_r = ui.label(egui::RichText::new(*key).font(theme::regular(12.0)).color(theme::text_dim()));
-                    if key_r.on_hover_cursor(egui::CursorIcon::PointingHand).clicked() {
+                    if resp.on_hover_cursor(egui::CursorIcon::PointingHand).clicked() {
                         ui.ctx().copy_text((*key).to_owned());
-                        ui.ctx().data_mut(|d| d.insert_temp(ui.id().with("copied"), std::time::Instant::now()));
                     }
-                });
-                ui.add_space(18.0);
-            }
-        });
-        ui.add_space(6.0);
-        ui.label(egui::RichText::new("Click a key to copy it. Scan the QR code with your bank app — no amount is set, so you choose the value.").font(theme::regular(12.5)).color(theme::text_dim()));
+                    ui.add_space(16.0);
+                }
+            });
+            ui.add_space(4.0);
+        }
     });
 }
 
