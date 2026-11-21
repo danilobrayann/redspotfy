@@ -12,7 +12,7 @@ use crate::ytm::HomePage;
 
 use crate::remote::{Cmd, RepeatMode};
 
-use super::{Action, App, Dialog, HomeState, LibTab, Page, PlayingAs, Repeat, dev_var};
+use super::{Action, App, Dialog, HomeState, LibTab, Page, PlayingAs, Repeat, SleepTimer, dev_var};
 
 impl App {
     pub(super) fn pump(&mut self, ctx: &egui::Context, now: f64) {
@@ -27,11 +27,27 @@ impl App {
         while let Ok(r) = self.ch.resp_rx.try_recv() {
             self.on_resp(r, now);
         }
+        // The sleep timer's moment: pause (the pause itself fades out a touch).
+        match self.sleep_timer {
+            Some(SleepTimer::At(t)) if std::time::Instant::now() >= t => {
+                self.sleep_timer = None;
+                self.audio.send(AudioCmd::Pause);
+                self.toast("Sleep timer: paused");
+            }
+            Some(SleepTimer::At(t)) => {
+                ctx.request_repaint_after(t.saturating_duration_since(std::time::Instant::now()));
+            }
+            _ => {}
+        }
         while let Ok(ev) = self.ch.audio_rx.try_recv() {
             match ev {
                 AudioEvent::Finished { generation } if generation == self.generation && self.jam.guest() => {}
                 AudioEvent::Finished { generation } if generation == self.generation => {
-                    if self.repeats_one() {
+                    if self.sleep_timer == Some(SleepTimer::EndOfSong) {
+                        self.sleep_timer = None;
+                        self.audio.send(AudioCmd::Pause);
+                        self.toast("Sleep timer: paused at the end of the song");
+                    } else if self.repeats_one() {
                         self.play_current();
                     } else {
                         self.next();
@@ -43,8 +59,9 @@ impl App {
                     }
                 }
                 AudioEvent::Finished { .. } => {}
-                // Crossfade into the next song; repeat-one and the end of the queue wait for the end.
-                AudioEvent::Ending { generation } if generation == self.generation && !self.jam.guest() && !self.repeats_one() => {
+                // Crossfade into the next song; repeat-one, the end of the queue and the
+                // end-of-song sleep timer wait for the end.
+                AudioEvent::Ending { generation } if generation == self.generation && !self.jam.guest() && !self.repeats_one() && self.sleep_timer != Some(SleepTimer::EndOfSong) => {
                     self.handoff = true;
                     self.next();
                     self.handoff = false;

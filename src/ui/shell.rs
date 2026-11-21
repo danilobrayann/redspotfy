@@ -1457,6 +1457,14 @@ pub fn player_bar(app: &mut App, ui: &mut Ui, now: f64) {
         }
     }
 
+    // A slim spectrum strip along the bar's top edge while music plays: the loudness
+    // level with a per-bar sway, so it reads as a visualizer and not a meter.
+    let level = app.audio.status.level();
+    if playing && level > 0.01 && full.height() >= 44.0 {
+        visualizer(ui, full, level, now, app.accent_color());
+        ui.ctx().request_repaint_after(std::time::Duration::from_millis(50));
+    }
+
     let [pad_x, pad_top] = chrome.bar_pad.unwrap_or([16.0, 6.0]);
     let row = Rect::from_min_max(pos2(full.left() + pad_x, full.top() + pad_top), pos2(full.right() - pad_x, full.bottom()));
     let cy = row.center().y;
@@ -2118,5 +2126,26 @@ pub fn toast(app: &mut App, ctx: &egui::Context, now: f64) {
         // Faded out: gone, whatever else would have kept it.
         app.toast = None;
         app.settle();
+    }
+}
+
+/// The spectrum strip on the player bar's top edge: `level` bars whose heights sway
+/// with layered sines per index, smoothed so they flow rather than flicker.
+fn visualizer(ui: &Ui, bar: Rect, level: f32, now: f64, accent: Color32) {
+    const BARS: usize = 56;
+    let strip = Rect::from_min_max(pos2(bar.left() + 10.0, bar.top() + 2.0), pos2(bar.right() - 10.0, bar.top() + 14.0));
+    let w = strip.width() / BARS as f32;
+    let max_h = strip.height();
+    for i in 0..BARS {
+        // Per-bar phase and speed from a cheap hash of the index: no two bars move alike.
+        let h1 = ((i as u32).wrapping_mul(2654435761) % 1000) as f32 / 1000.0;
+        let h2 = ((i as u32).wrapping_mul(1597334677) % 1000) as f32 / 1000.0;
+        let sway = 0.55 + 0.45 * (now as f32 * (1.2 + h1 * 2.2) + h1 * 6.28).sin();
+        let wave = 0.5 + 0.5 * (now as f32 * (0.9 + h2 * 1.6) + h2 * 9.42 + i as f32 * 0.35).sin();
+        let env = (level * (0.35 + 0.65 * wave) * sway).clamp(0.0, 1.0);
+        let h = max_h * (0.12 + 0.88 * env);
+        let x = strip.left() + i as f32 * w;
+        let r = Rect::from_min_max(pos2(x + w * 0.18, strip.bottom() - h), pos2(x + w * 0.82, strip.bottom()));
+        ui.painter().rect_filled(r, 1.5, theme::with_alpha(accent, 0.28 + 0.5 * env));
     }
 }

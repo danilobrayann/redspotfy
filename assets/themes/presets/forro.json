@@ -1,0 +1,78 @@
+{
+  "id": "forro",
+  "name": "Forró",
+  "creators": [
+    "danilobrayann"
+  ],
+  "blurb": "Festival lights: electric blue and marigold over terracotta, covers pulsing to the zabumba.",
+  "source": "RedSpotfy",
+  "accent": "#38bdf8",
+  "background": {
+    "mode": "kawarp",
+    "solid": "#081226",
+    "solid_light": "#12264a",
+    "saturation": 2.3,
+    "speed": 1.6,
+    "np_dim": 0.56,
+    "page_dim": 0.46,
+    "reactive": 0.9,
+    "audio_speed": 3.2,
+    "scrim": 0.32,
+    "crossfade_secs": 1.1,
+    "dither": 0.005,
+    "blur_passes": 8
+  },
+  "lyrics": {
+    "font": "Google Sans Flex",
+    "weight": "bold",
+    "font_rem": [
+      [
+        0,
+        3.0
+      ]
+    ],
+    "line_height": 1.4,
+    "dim_alpha": 0.38,
+    "sung_color": "#fbbf24",
+    "sweep_band": [
+      "#38bdf8",
+      "#fbbf24",
+      "#fb7185"
+    ],
+    "sweep_band_width": 0.65,
+    "opacity_transition": {
+      "secs": 0.3
+    },
+    "blur_transition": {
+      "secs": 0.3
+    }
+  },
+  "cover": {
+    "radius": 12,
+    "shadow": 0.5,
+    "shadow_blur": 55
+  },
+  "now_playing": {
+    "title_align": "left",
+    "title_px": 28,
+    "artist_px": 17
+  },
+  "chrome": {
+    "bar_height": 84,
+    "bar_radius": 18,
+    "bar_margin": [
+      14,
+      14
+    ]
+  },
+  "app": {
+    "page_bg": "same",
+    "sidebar": "glass",
+    "bar_alpha": 0.6,
+    "card_radius": 14,
+    "thumb_radius": 8,
+    "panel_radius": 16,
+    "search_radius": 22,
+    "text_dim": "#b3c4de"
+  }
+}

@@ -22,6 +22,15 @@ impl Repeat {
     }
 }
 
+/// Sleep timer: pause at a wall-clock time, or when the song playing ends.
+#[derive(Clone, Copy, PartialEq)]
+pub enum SleepTimer {
+    /// Pause once `Instant` passes.
+    At(std::time::Instant),
+    /// Pause when the current song finishes (repeat-one keeps it going).
+    EndOfSong,
+}
+
 /// A playlist's load whose next pages also go to the queue (mixed into what's still to
 /// come while shuffle is on). `ran_out`: playback reached the end of what had come, and
 /// carries on when more does (or the load ends).

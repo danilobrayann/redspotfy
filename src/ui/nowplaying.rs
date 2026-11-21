@@ -1997,6 +1997,10 @@ fn options_menu(app: &mut App, ui: &mut Ui, track: &crate::model::Track, lyrics:
             quality_rows(app, ui);
             menu_divider(ui);
         }
+        sleep_timer_rows(app, ui);
+        menu_divider(ui);
+        switch_row(ui, "Floating lyrics", &mut app.float_lyrics);
+        menu_divider(ui);
         let liked = app.heard_liked();
         let asked = app.actions.len();
         widgets::song_actions(ui, track, liked, None, &mut app.actions);
@@ -2006,6 +2010,95 @@ fn options_menu(app: &mut App, ui: &mut Ui, track: &crate::model::Track, lyrics:
             }
         }
     });
+}
+
+/// The sleep timer's choices in Now playing's options menu: off, end of song, or in
+/// minutes. Picking one pauses playback when its moment comes.
+fn sleep_timer_rows(app: &mut App, ui: &mut Ui) {
+    use super::SleepTimer;
+    menu_caption(ui, "SLEEP TIMER");
+    let cur = app.sleep_timer;
+    let mut pick: Option<Option<SleepTimer>> = None;
+    let mins = [(15, "15 minutes"), (30, "30 minutes"), (45, "45 minutes"), (60, "1 hour")];
+    let rows: Vec<(&str, Option<SleepTimer>)> = std::iter::once(("Off", None))
+        .chain(std::iter::once(("End of song", Some(SleepTimer::EndOfSong))))
+        .chain(mins.iter().map(|(m, l)| (*l, Some(SleepTimer::At(std::time::Instant::now() + std::time::Duration::from_secs(*m as u64 * 60))))))
+        .collect();
+    for (label, timer) in rows {
+        // A timed pick is "on" whatever its exact deadline; it re-arms below.
+        let on = match (cur, timer) {
+            (None, None) => true,
+            (Some(SleepTimer::EndOfSong), Some(SleepTimer::EndOfSong)) => true,
+            (Some(SleepTimer::At(_)), Some(SleepTimer::At(_))) => {
+                // Show the check on the row closest to the remaining time.
+                let left = match cur { Some(SleepTimer::At(t)) => t.saturating_duration_since(std::time::Instant::now()).as_secs() as i64 / 60, _ => 0 };
+                let want = match label { "15 minutes" => 15, "30 minutes" => 30, "45 minutes" => 45, "1 hour" => 60, _ => 0 };
+                (left - want).abs() <= 1
+            }
+            _ => false,
+        };
+        if widgets::menu_choice(ui, label, on) {
+            pick = Some(timer);
+        }
+    }
+    if let Some(t) = pick {
+        app.sleep_timer = t;
+        match t {
+            None => app.toast("Sleep timer off"),
+            Some(SleepTimer::EndOfSong) => app.toast("Sleep timer: end of this song"),
+            Some(SleepTimer::At(at)) => {
+                let mins = at.saturating_duration_since(std::time::Instant::now()).as_secs() / 60;
+                app.toast(format!("Sleep timer: pause in ~{mins} min"));
+            }
+        }
+    }
+}
+
+/// The current lyric line floating in a pill at the top of the window, for reading the
+/// words over anything else (Settings: Now playing's options menu › Floating lyrics).
+pub fn floating_lyrics(app: &mut App, ctx: &egui::Context, now: f64) {
+    if !app.float_lyrics || app.window_hidden || app.np_open && app.fullscreen {
+        return;
+    }
+    let Some(text) = float_line(app) else { return };
+    let font = theme::semibold(16.0);
+    let ui = egui::Ui::new(ctx.clone(), egui::Id::unique("float-lyrics-ui"), egui::UiBuilder::new().max_rect(ctx.content_rect()));
+    let galley = widgets::galley(&ui, &text, font, theme::text(), 520.0);
+    let size = galley.size() + vec2(28.0, 14.0);
+    let area = ctx.content_rect();
+    let pos = pos2(area.center().x - size.x / 2.0, area.top() + 14.0);
+    let r = Rect::from_min_size(pos, size);
+    let id = egui::Id::unique("float-lyrics");
+    let resp = ui.interact(r, id, egui::Sense::hover());
+    let h = theme::anim_bool(ctx, id.with("h"), resp.hovered(), 0.12);
+    let painter = ctx.layer_painter(egui::LayerId::new(egui::Order::Foreground, id));
+    painter.rect_filled(r, 14.0, theme::glass(0.55 + 0.1 * h));
+    painter.rect_stroke(r, 14.0, egui::Stroke::new(1.0, theme::glass(0.14)), egui::StrokeKind::Inside);
+    painter.galley(r.min + vec2(14.0, 7.0), galley, theme::text());
+    let _ = now;
+}
+
+/// The lyric line under the playhead now, for the floating pill: the chosen source's
+/// timed lines at the audible position, else the last one sung (dimmed is the caller's
+/// business — the pill just shows the words).
+fn float_line(app: &App) -> Option<String> {
+    let (id, set) = app.lyrics.as_ref()?;
+    let provider = app.lyric_prefs.choose(id, set)?;
+    let lyrics = set.get(provider)?;
+    if lyrics.sync == crate::lyrics::Sync::None {
+        return None;
+    }
+    let pos = app.audio.status.position_smooth().as_secs_f64() - app.audio.status.latency().as_secs_f64();
+    let t = (pos - app.lyric_prefs.offset(id, provider, lyrics.sync == crate::lyrics::Sync::Word)) * 1000.0;
+    let at = |l: &crate::lyrics::Line| t >= l.start as f64 && t < (l.start + l.dur.max(1)) as f64;
+    let sung = |l: &crate::lyrics::Line| (l.start + l.dur) as f64 <= t;
+    lyrics
+        .lines
+        .iter()
+        .find(|l| at(l) && !l.instrumental)
+        .or_else(|| lyrics.lines.iter().rev().find(|l| sung(l) && !l.instrumental))
+        .map(|l| l.text.trim().to_owned())
+        .filter(|s| !s.is_empty())
 }
 
 fn lyric_options(app: &mut App, ui: &mut Ui) {

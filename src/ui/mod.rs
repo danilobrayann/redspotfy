@@ -62,7 +62,7 @@ use queue::Queue;
 use shuffle::{shuffle, shuffle_to_play};
 use dev::{dev_screenshot, dev_var};
 use dialogs::text_field;
-pub use queue::Repeat;
+pub use queue::{Repeat, SleepTimer};
 
 #[derive(Clone, PartialEq, Hash, Debug)]
 pub enum Page {
@@ -506,6 +506,8 @@ pub struct App {
     glow: Option<nowplaying::Glow>,
     /// Animated covers in Now playing, where Apple Music has one for the song.
     animated_covers: bool,
+    /// The current lyric line floating over the window (Now playing's options menu).
+    float_lyrics: bool,
     /// The song's animated cover: looked up, then playing.
     cover_clip: Option<nowplaying::CoverClip>,
     /// The colours of the animated cover's first frame (and its song's): the accent and
@@ -533,6 +535,8 @@ pub struct App {
     radio_pending: bool,
     /// The last song ended with nothing after it: radio carries on from there.
     ended: bool,
+    /// Sleep timer: pause when the clock runs out, or when this song ends.
+    sleep_timer: Option<SleepTimer>,
     seek_drag: Option<f32>,
 
     // visuals
@@ -902,6 +906,7 @@ impl App {
             ambient_light: get("ambient_light").is_none_or(|v| v == "1"),
             glow: None,
             animated_covers: std::env::var_os("REDSPOTFY_CANVAS").is_some() || get("animated_covers").is_some_and(|v| v == "1"),
+            float_lyrics: get("float_lyrics").is_some_and(|v| v == "1"),
             cover_clip: None,
             clip_art: None,
             hide_search_videos: get("hide_search_videos").is_some_and(|v| v == "1"),
@@ -958,6 +963,7 @@ impl App {
             media_cover: Default::default(),
             radio_pending: false,
             ended: false,
+            sleep_timer: None,
             seek_drag: None,
             art_key: None,
             art_changed: -10.0,
@@ -1916,6 +1922,7 @@ impl eframe::App for App {
         notes::dialog(self, &ctx);
         if let Some(url) = self.share_pending.take() { ctx.copy_text(url); }
         shell::suggestions(self, &ctx);
+        nowplaying::floating_lyrics(self, &ctx, now);
         shell::toast(self, &ctx, now);
 
         titlebar::window_buttons(&ctx);
@@ -2014,6 +2021,7 @@ impl eframe::App for App {
         storage.set_string("video_fill", b(self.video_fill));
         storage.set_string("ambient_light", b(self.ambient_light));
         storage.set_string("animated_covers", b(self.animated_covers));
+        storage.set_string("float_lyrics", b(self.float_lyrics));
         storage.set_string("hide_search_videos", b(self.hide_search_videos));
         storage.set_string("hide_explicit", b(self.hide_explicit));
         storage.set_string("list_sorts", serde_json::to_string(&self.find.sorts).unwrap_or_default());

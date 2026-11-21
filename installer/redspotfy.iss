@@ -8,7 +8,7 @@
 #define AppName "RedSpotfy"
 ; A nightly build passes its own: iscc /DAppVersion=0.2.34-nightly.20261110
 #ifndef AppVersion
-  #define AppVersion "2.0.1"
+  #define AppVersion "2.0.2"
 #endif
 #define AppExe "redspotfy.exe"
 #ifdef Arm64

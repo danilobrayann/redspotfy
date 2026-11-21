@@ -1,0 +1,81 @@
+{
+  "id": "rgb",
+  "name": "Prisma RGB",
+  "creators": [
+    "danilobrayann"
+  ],
+  "blurb": "A living prism: deep space base with a cover warped in full spectrum, lyrics sweeping through a rainbow band, and a hot magenta accent.",
+  "source": "RedSpotfy",
+  "accent": "#ff2d95",
+  "background": {
+    "mode": "kawarp",
+    "solid": "#07030f",
+    "solid_light": "#160b2e",
+    "saturation": 2.6,
+    "speed": 2.0,
+    "np_dim": 0.55,
+    "page_dim": 0.45,
+    "reactive": 1.0,
+    "audio_speed": 4.0,
+    "scrim": 0.32,
+    "crossfade_secs": 1.0,
+    "dither": 0.005,
+    "blur_passes": 8
+  },
+  "lyrics": {
+    "font": "Google Sans Flex",
+    "weight": "bold",
+    "font_rem": [
+      [
+        0,
+        3.0
+      ]
+    ],
+    "line_height": 1.4,
+    "dim_alpha": 0.38,
+    "sung_color": "#22d3ee",
+    "sweep_band": [
+      "#ff2d95",
+      "#a855f7",
+      "#22d3ee",
+      "#4ade80",
+      "#facc15",
+      "#ff2d95"
+    ],
+    "sweep_band_width": 0.7,
+    "opacity_transition": {
+      "secs": 0.3
+    },
+    "blur_transition": {
+      "secs": 0.3
+    }
+  },
+  "cover": {
+    "radius": 12,
+    "shadow": 0.5,
+    "shadow_blur": 55
+  },
+  "now_playing": {
+    "title_align": "left",
+    "title_px": 28,
+    "artist_px": 17
+  },
+  "chrome": {
+    "bar_height": 84,
+    "bar_radius": 18,
+    "bar_margin": [
+      14,
+      14
+    ]
+  },
+  "app": {
+    "page_bg": "same",
+    "sidebar": "glass",
+    "bar_alpha": 0.6,
+    "card_radius": 14,
+    "thumb_radius": 8,
+    "panel_radius": 16,
+    "search_radius": 22,
+    "text_dim": "#c9b8e8"
+  }
+}
