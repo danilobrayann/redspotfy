@@ -3558,28 +3558,30 @@ fn settings_support(ui: &mut Ui) {
             ("danilobrayann@gmail.com", include_bytes!("../../assets/pix/email2.png")),
             ("077.636.505.32", include_bytes!("../../assets/pix/cpf.png")),
         ];
-        let size = vec2(180.0, 180.0);
-        for row in KEYS.chunks(2) {
-            ui.horizontal(|ui| {
-                for (key, png) in row {
-                    let (rect, resp) = ui.allocate_exact_size(size, Sense::click());
-                    let img = image::load_from_memory(png).ok().map(|i| i.to_rgba8());
-                    if let Some(img) = img {
-                        let (w, h) = (img.width() as usize, img.height() as usize);
-                        let raw = img.into_raw();
-                        let tex = ui.ctx().load_texture("pix-qr", egui::ColorImage::from_rgba_unmultiplied([w, h], &raw), egui::TextureOptions::LINEAR);
-                        ui.painter().image(tex.id(), rect, Rect::from_min_max(pos2(0.0, 0.0), pos2(1.0, 1.0)), Color32::WHITE);
-                    } else {
-                        ui.painter().rect_filled(rect, 8.0, theme::glass(0.08));
-                    }
-                    if resp.on_hover_cursor(egui::CursorIcon::PointingHand).clicked() {
-                        ui.ctx().copy_text((*key).to_owned());
-                    }
-                    ui.add_space(16.0);
+        let size = vec2(160.0, 160.0);
+        ui.vertical_centered(|ui| {
+            for (key, png) in KEYS {
+                let (rect, resp) = ui.allocate_exact_size(size, Sense::click());
+                let img = image::load_from_memory(png).ok().map(|i| i.to_rgba8());
+                if let Some(img) = img {
+                    let (w, h) = (img.width() as usize, img.height() as usize);
+                    let raw = img.into_raw();
+                    let tex = ui.ctx().load_texture("pix-qr", egui::ColorImage::from_rgba_unmultiplied([w, h], &raw), egui::TextureOptions::LINEAR);
+                    ui.painter().image(tex.id(), rect, Rect::from_min_max(pos2(0.0, 0.0), pos2(1.0, 1.0)), Color32::WHITE);
+                } else {
+                    ui.painter().rect_filled(rect, 8.0, theme::glass(0.08));
                 }
-            });
-            ui.add_space(4.0);
-        }
+                if resp.on_hover_cursor(egui::CursorIcon::PointingHand).clicked() {
+                    ui.ctx().copy_text((*key).to_owned());
+                }
+                ui.add_space(10.0);
+                let key_r = ui.label(egui::RichText::new(*key).font(theme::regular(13.0)).color(theme::text_dim()));
+                if key_r.on_hover_cursor(egui::CursorIcon::PointingHand).clicked() {
+                    ui.ctx().copy_text((*key).to_owned());
+                }
+                ui.add_space(26.0);
+            }
+        });
     });
 }
 
