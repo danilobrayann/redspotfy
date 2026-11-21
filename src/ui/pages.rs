@@ -2186,11 +2186,12 @@ pub(super) enum SettingsTab {
     General,
     Shortcuts,
     About,
+    Support,
 }
 
 impl SettingsTab {
     /// Most used first, which is how they're listed.
-    const ALL: [Self; 8] = [Self::Account, Self::Playback, Self::Lyrics, Self::Appearance, Self::Connections, Self::General, Self::Shortcuts, Self::About];
+    const ALL: [Self; 9] = [Self::Account, Self::Playback, Self::Lyrics, Self::Appearance, Self::Connections, Self::General, Self::Shortcuts, Self::About, Self::Support];
 
     pub(super) fn label(self) -> &'static str {
         match self {
@@ -2202,6 +2203,7 @@ impl SettingsTab {
             Self::General => "General",
             Self::Shortcuts => "Keyboard shortcuts",
             Self::About => "About",
+            Self::Support => "Apoiar",
         }
     }
 }
@@ -2404,6 +2406,7 @@ fn settings_tab(app: &mut App, ui: &mut Ui, tab: SettingsTab) {
                 settings_sign_off(app, ui);
             }
         }
+        SettingsTab::Support => settings_support(ui),
     }
 }
 
@@ -3543,6 +3546,44 @@ fn settings_about(ui: &mut Ui) {
             divider(ui);
             setting_row(ui, title, Some(desc), |_| {});
         }
+    });
+}
+
+/// Settings › Apoiar: Pix QR codes that keep RedSpotfy updated.
+fn settings_support(ui: &mut Ui) {
+    settings_section(ui, "Apoiar o RedSpotfy", None, Some("RedSpotfy is free and built by one person. Any amount helps keep the project updated — new themes, features and fixes — and grows our support network. Pick a key, scan the QR with your bank app, and send whatever feels right."), |ui| {
+        const KEYS: &[(&str, &str, &[u8])] = &[
+            ("E-mail", "danilo.inter@hotmail.com", include_bytes!("../../assets/pix/email1.png")),
+            ("Telefone", "71996738280", include_bytes!("../../assets/pix/phone.png")),
+            ("E-mail", "danilobrayann@gmail.com", include_bytes!("../../assets/pix/email2.png")),
+            ("CPF", "077.636.505.32", include_bytes!("../../assets/pix/cpf.png")),
+        ];
+        ui.horizontal_wrapped(|ui| {
+            for (kind, key, png) in KEYS {
+                ui.vertical(|ui| {
+                    let size = vec2(148.0, 148.0);
+                    let (rect, _) = ui.allocate_exact_size(size, Sense::hover());
+                    let img = image::load_from_memory(png).ok().map(|i| i.to_rgba8());
+                    if let Some(img) = img {
+                        let (w, h) = (img.width() as usize, img.height() as usize);
+                        let raw = img.into_raw();
+                        let tex = ui.ctx().load_texture("pix-qr", egui::ColorImage::from_rgba_unmultiplied([w, h], &raw), egui::TextureOptions::LINEAR);
+                        ui.painter().image(tex.id(), rect, Rect::from_min_max(pos2(0.0, 0.0), pos2(1.0, 1.0)), Color32::WHITE);
+                    } else {
+                        ui.painter().rect_filled(rect, 8.0, theme::glass(0.08));
+                    }
+                    ui.label(egui::RichText::new(*kind).font(theme::semibold(12.5)).color(theme::text()));
+                    let key_r = ui.label(egui::RichText::new(*key).font(theme::regular(12.0)).color(theme::text_dim()));
+                    if key_r.on_hover_cursor(egui::CursorIcon::PointingHand).clicked() {
+                        ui.ctx().copy_text((*key).to_owned());
+                        ui.ctx().data_mut(|d| d.insert_temp(ui.id().with("copied"), std::time::Instant::now()));
+                    }
+                });
+                ui.add_space(18.0);
+            }
+        });
+        ui.add_space(6.0);
+        ui.label(egui::RichText::new("Click a key to copy it. Scan the QR code with your bank app — no amount is set, so you choose the value.").font(theme::regular(12.5)).color(theme::text_dim()));
     });
 }
 
