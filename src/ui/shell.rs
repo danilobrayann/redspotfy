@@ -575,24 +575,16 @@ pub fn sidebar(app: &mut App, ui: &mut Ui) {
         menu_button(app, ui);
         ui.add_space(8.0);
         ui.multiply_opacity(a);
-        let (r, resp) = ui.allocate_exact_size(vec2(32.0, 32.0), Sense::click());
-        if let Some(img) = appicon::get(appicon::load(app.backend.data_dir())).rgba(32) {
-            let texture = ui.ctx().load_texture("app_logo_32", egui::ColorImage::from_rgba_unmultiplied([img.width() as usize, img.height() as usize], img.as_raw()), egui::TextureOptions::LINEAR);
-            ui.painter().image(texture.id(), r, r, Color32::WHITE);
-        } else {
-            ui.painter().circle_filled(r.center(), 16.0, theme::RED);
-            ui.painter().circle_stroke(r.center(), 9.5, egui::Stroke::new(1.6, Color32::WHITE));
-            widgets::play_triangle(ui, r.center() + vec2(0.8, 0.0), 4.6, Color32::WHITE);
-        }
-        let resp = named(resp, "Home");
-        let resp = if collapsed { resp } else { resp.on_hover_cursor(egui::CursorIcon::PointingHand) };
-        if resp.clicked() && !collapsed {
-            app.actions.push(Action::Go(Page::Home));
-        }
         ui.add_space(8.0);
         let logo = app.look().app.top_bar.clone();
         if logo.logo_text.is_empty() {
+            // Center the animated text
+            let available_width = ui.available_width();
+            let text_width = 200.0; // estimated width of "RedSpotfy"
+            let padding = (available_width - text_width) / 2.0;
+            ui.add_space(padding.max(0.0));
             animated_redspotfy_text(ui, app.accent_color());
+            ui.add_space(padding.max(0.0));
         } else {
             logo_name(ui, &logo, app.accent_color());
         }
