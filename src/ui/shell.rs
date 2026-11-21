@@ -514,7 +514,11 @@ pub fn sidebar(app: &mut App, ui: &mut Ui) {
         let logo = app.look().app.top_bar.clone();
         if logo.logo_text.is_empty() {
             ui.horizontal(|ui| {
-                ui.label(egui::RichText::new(icon::MUSIC).font(theme::semibold(22.0)).color(app.accent_color()));
+                if let Some(img) = appicon::get(appicon::load(app.backend.data_dir())).rgba(32) {
+                    let texture = ui.ctx().load_texture("app-logo-32", egui::ColorImage::from_rgba_unmultiplied([img.width() as usize, img.height() as usize], img.as_raw()), egui::TextureOptions::LINEAR);
+                    let (r, _) = ui.allocate_exact_size(vec2(32.0, 32.0), Sense::hover());
+                    ui.painter().image(texture.id(), r, r, Color32::WHITE);
+                }
                 ui.label(egui::RichText::new("RedSpotfy").font(theme::bold(22.0)).color(theme::text()));
             });
         } else {
