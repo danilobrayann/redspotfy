@@ -513,7 +513,10 @@ pub fn sidebar(app: &mut App, ui: &mut Ui) {
         ui.add_space(8.0);
         let logo = app.look().app.top_bar.clone();
         if logo.logo_text.is_empty() {
-            ui.label(egui::RichText::new("RedSpotfy").font(theme::bold(22.0)).color(theme::text()));
+            ui.horizontal(|ui| {
+                ui.label(egui::RichText::new(icon::MUSIC).font(theme::semibold(22.0)).color(app.accent_color()));
+                ui.label(egui::RichText::new("RedSpotfy").font(theme::bold(22.0)).color(theme::text()));
+            });
         } else {
             logo_name(ui, &logo, app.accent_color());
         }
