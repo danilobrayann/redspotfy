@@ -3574,12 +3574,7 @@ fn settings_support(ui: &mut Ui) {
                 if resp.on_hover_cursor(egui::CursorIcon::PointingHand).clicked() {
                     ui.ctx().copy_text((*key).to_owned());
                 }
-                ui.add_space(10.0);
-                let key_r = ui.label(egui::RichText::new(*key).font(theme::regular(13.0)).color(theme::text_dim()));
-                if key_r.on_hover_cursor(egui::CursorIcon::PointingHand).clicked() {
-                    ui.ctx().copy_text((*key).to_owned());
-                }
-                ui.add_space(26.0);
+                ui.add_space(30.0);
             }
         });
     });
