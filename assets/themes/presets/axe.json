@@ -1,0 +1,77 @@
+{
+  "id": "axe",
+  "name": "Axé",
+  "creators": [
+    "danilobrayann"
+  ],
+  "blurb": "Bahian heat: ember red background, orange accent, gold sung sweep.",
+  "source": "RedSpotfy",
+  "accent": "#f97316",
+  "background": {
+    "mode": "kawarp",
+    "solid": "#120a24",
+    "solid_light": "#241040",
+    "saturation": 2.2,
+    "speed": 1.4,
+    "np_dim": 0.6,
+    "page_dim": 0.5,
+    "reactive": 0.8,
+    "audio_speed": 3.0,
+    "scrim": 0.3,
+    "crossfade_secs": 1.2,
+    "dither": 0.006,
+    "blur_passes": 7
+  },
+  "lyrics": {
+    "font": "Google Sans Flex",
+    "weight": "bold",
+    "font_rem": [
+      [
+        0,
+        3.0
+      ]
+    ],
+    "line_height": 1.4,
+    "dim_alpha": 0.4,
+    "sung_color": "#fb923c",
+    "sweep_band": [
+      "#7c3aed",
+      "#22c55e"
+    ],
+    "sweep_band_width": 0.6,
+    "opacity_transition": {
+      "secs": 0.3
+    },
+    "blur_transition": {
+      "secs": 0.3
+    }
+  },
+  "cover": {
+    "radius": 12,
+    "shadow": 0.5,
+    "shadow_blur": 55
+  },
+  "now_playing": {
+    "title_align": "left",
+    "title_px": 28,
+    "artist_px": 17
+  },
+  "chrome": {
+    "bar_height": 84,
+    "bar_radius": 18,
+    "bar_margin": [
+      14,
+      14
+    ]
+  },
+  "app": {
+    "page_bg": "same",
+    "sidebar": "glass",
+    "bar_alpha": 0.6,
+    "card_radius": 14,
+    "thumb_radius": 8,
+    "panel_radius": 16,
+    "search_radius": 22,
+    "text_dim": "#b7a6c9"
+  }
+}

@@ -61,8 +61,13 @@ button { font: inherit; color: inherit; }
     radial-gradient(55% 45% at 12% -5%, var(--gc1) 0%, transparent 62%),
     radial-gradient(48% 40% at 88% 8%, var(--gc2) 0%, transparent 65%),
     radial-gradient(65% 55% at 50% 108%, var(--gc3) 0%, transparent 70%);
-  animation: aurora-cycle 40s linear infinite;
+  animation: aurora-cycle 40s linear infinite, aurora-hue 20s linear infinite;
   transition: --gc1 1.2s ease, --gc2 1.2s ease, --gc3 1.2s ease;
+}
+/* On top of the scheme swaps, the whole aurora slowly turns through the
+   rainbow so the site breathes like the app's cycling themes. */
+@keyframes aurora-hue {
+  to { filter: hue-rotate(360deg); }
 }
 /* Four harmonious schemes, ~10 s each: brand violet/green/clay, then
    indigo/emerald, violet/teal and deep blue/lime rotations. */
@@ -74,7 +79,7 @@ button { font: inherit; color: inherit; }
   100%        { --gc1: #7c3aed; --gc2: #22c55e; --gc3: #e8a06a; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .aurora { animation: none; }
+  .aurora { animation: none; filter: none; }
 }
 
 /* ---------- buttons ---------- */
